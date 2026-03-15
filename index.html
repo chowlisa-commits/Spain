@@ -1,0 +1,2933 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0E0B06">
+<title>España Dorada — SFO · Barcelona · Madrid · July 2026</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=EB+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --gold: #C9A04A;
+  --gold-light: #E8C87A;
+  --gold-pale: #F5E8C0;
+  --cream: #F7F1E5;
+  --warm-white: #FDFAF4;
+  --ink: #0E0B06;
+  --brown-deep: #1A1208;
+  --brown-mid: #3C2A14;
+  --brown-warm: #6B4A2A;
+  --terracotta: #C04E28;
+  --terracotta-light: #E07050;
+  --barcelona-blue: #1B4A8A;
+  --madrid-crimson: #9B2335;
+  --sage: #4A6E4A;
+  --text-cream: #F0E6CC;
+  --text-light: #C8B898;
+  --card-bg: rgba(26,18,8,0.85);
+  --border: rgba(201,160,74,0.25);
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
+html { scroll-behavior:smooth; font-size:16px; overflow-x: hidden; }
+html { overflow-x: hidden; }
+body {
+  font-family:'EB Garamond', serif;
+  background: var(--brown-deep);
+  color: var(--cream);
+}
+/* ─── MOBILE MENU OVERLAY ─── */
+.mobile-menu-overlay {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  z-index: 10002;
+  background: rgba(10,8,4,0.97);
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-top: 4rem;
+  padding-bottom: 2rem;
+}
+.mobile-menu-overlay.open {
+  display: flex;
+}
+.mobile-menu-overlay a {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 1.2rem;
+  font-weight: 500;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--cream);
+  text-decoration: none;
+  padding: 1rem 3rem;
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  text-align: center;
+  transition: color .2s, background .2s;
+  border-bottom: 1px solid rgba(201,160,74,0.08);
+}
+.mobile-menu-overlay a:first-of-type { border-top: 1px solid rgba(201,160,74,0.08); }
+.mobile-menu-overlay a:active { color: var(--gold); background: rgba(201,160,74,0.08); }
+.mobile-menu-overlay a,
+.mobile-menu-close,
+.nav-toggle,
+.nav-toggle span {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.mobile-menu-close {
+  position: absolute;
+  top: max(1.2rem, env(safe-area-inset-top, 1.2rem));
+  right: 1.2rem;
+  background: none;
+  border: 1px solid rgba(201,160,74,0.25);
+  border-radius: 2px;
+  color: var(--text-light);
+  font-size: 1rem;
+  padding: 0;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: color .2s, border-color .2s;
+  line-height: 1;
+}
+.mobile-menu-close:active { color: var(--gold); border-color: var(--gold); }
+
+/* ─── CURSOR (desktop only — applied via JS on non-touch) ─── */
+.has-cursor { cursor: none; }
+.has-cursor a, .has-cursor button { cursor: none; }
+
+/* All buttons and links default to pointer cursor */
+button, a {
+  cursor: pointer;
+  touch-action: manipulation; /* eliminates iOS 300ms tap delay */
+  -webkit-tap-highlight-color: rgba(201,160,74,0.2);
+}
+
+/* ─── CURSOR ELEMENTS (hidden by default, shown on desktop via JS) ─── */
+#cursor-dot, #cursor-ring {
+  display: none;
+  position: fixed; pointer-events: none; z-index: 9999; border-radius: 50%; transition: opacity .3s;
+}
+#cursor-dot { width:6px; height:6px; background:var(--gold); margin:-3px 0 0 -3px; }
+#cursor-ring { width:36px; height:36px; border:1.5px solid rgba(201,160,74,0.6); margin:-18px 0 0 -18px; transition: transform .12s ease, opacity .3s; }
+
+/* ─── NOISE OVERLAY ─── */
+body::before {
+  content:''; position:fixed; inset:0; z-index:1; pointer-events:none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.035'/%3E%3C/svg%3E");
+  opacity: 0.4;
+}
+
+/* ─── NAV ─── */
+nav {
+  position: fixed; top:0; left:0; right:0; z-index:10000;
+  display:flex; align-items:center; justify-content:space-between;
+  padding: 1.2rem 3rem;
+  padding-left: max(3rem, env(safe-area-inset-left, 3rem));
+  padding-right: max(3rem, env(safe-area-inset-right, 3rem));
+  background: linear-gradient(to bottom, rgba(14,11,6,0.9), transparent);
+  transition: background .4s;
+}
+nav.scrolled {
+  background: rgba(14,11,6,0.97);
+  border-bottom: 1px solid var(--border);
+}
+.nav-logo {
+  font-family:'Playfair Display', serif;
+  font-size:1.1rem; font-weight:700; letter-spacing:.05em;
+  color: var(--gold);
+  text-decoration: none;
+}
+.nav-links { display:flex; gap:2rem; list-style:none; }
+.nav-links a {
+  font-family:'Montserrat', sans-serif; font-size:.65rem; font-weight:500;
+  letter-spacing:.2em; text-transform:uppercase; color:var(--text-cream);
+  text-decoration:none; opacity:.75; transition:opacity .2s, color .2s;
+}
+.nav-links a:hover { opacity:1; color:var(--gold); }
+.nav-toggle { display:none; background:none; border:none; cursor:pointer; flex-direction:column; gap:5px; padding:.5rem; touch-action:manipulation; -webkit-tap-highlight-color:transparent; position:relative; z-index:10003; min-width:44px; min-height:44px; align-items:center; justify-content:center; }
+.nav-toggle span { display:block; width:22px; height:1.5px; background:var(--cream); transition: transform .3s ease, opacity .3s ease; transform-origin: center; }
+.nav-toggle.active span:nth-child(1) { transform: rotate(45deg) translate(5px,5px); }
+.nav-toggle.active span:nth-child(2) { opacity: 0; transform: translateX(-8px); }
+.nav-toggle.active span:nth-child(3) { transform: rotate(-45deg) translate(5px,-5px); }
+
+/* ─── HERO ─── */
+#hero {
+  min-height: 100vh;
+  min-height: 100svh;
+  position: relative;
+  display: flex; align-items:center; justify-content:center;
+  overflow: hidden;
+  width: 100%;
+  z-index:0;
+}
+.hero-rings {
+  position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+  width: 0; height: 0; overflow: visible; pointer-events: none;
+}
+.hero-canvas {
+  position: absolute; inset:0; pointer-events: none;
+  background:
+    radial-gradient(ellipse 90% 70% at 15% 90%, rgba(201,160,74,0.22) 0%, transparent 55%),
+    radial-gradient(ellipse 70% 50% at 85% 10%, rgba(192,78,40,0.16) 0%, transparent 50%),
+    radial-gradient(ellipse 60% 60% at 50% 50%, rgba(27,74,138,0.08) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 30% at 70% 70%, rgba(220,120,40,0.08) 0%, transparent 50%),
+    #0E0B06;
+}
+.hero-grid {
+  position: absolute; inset:0; pointer-events: none;
+  background-image: linear-gradient(rgba(201,160,74,0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(201,160,74,0.05) 1px, transparent 1px);
+  background-size: 60px 60px;
+  animation: gridScroll 30s linear infinite;
+}
+@keyframes gridScroll { to { background-position: 0 60px; } }
+
+.hero-ring {
+  position:absolute; border-radius:50%; border:1px solid rgba(201,160,74,0.1);
+  top:50%; left:50%; transform:translate(-50%,-50%);
+  animation: ringPulse 6s ease-in-out infinite;
+  pointer-events: none;
+}
+.hero-ring:nth-child(1) { width: min(500px, 90vw); height: min(500px, 90vw); animation-delay:0s; }
+.hero-ring:nth-child(2) { width: min(750px, 130vw); height: min(750px, 130vw); animation-delay:1.5s; }
+.hero-ring:nth-child(3) { width: min(1000px, 170vw); height: min(1000px, 170vw); animation-delay:3s; }
+.hero-ring:nth-child(4) { width: min(1300px, 220vw); height: min(1300px, 220vw); animation-delay:4.5s; }
+@keyframes ringPulse {
+  0%,100% { opacity:.15; transform:translate(-50%,-50%) scale(1); }
+  50% { opacity:.4; transform:translate(-50%,-50%) scale(1.02); }
+}
+
+.hero-content { position:relative; z-index:10; text-align:center; padding:2rem; max-width: min(1000px, 100vw); width: 100%; }
+.hero-tag {
+  display:inline-flex; align-items:center; gap:.75rem;
+  font-family:'Montserrat', sans-serif; font-size:.6rem; font-weight:600;
+  letter-spacing:.35em; text-transform:uppercase; color:var(--gold);
+  margin-bottom:2.5rem;
+  opacity:0; animation: fadeUp .9s ease .2s forwards;
+}
+.hero-tag::before, .hero-tag::after { content:''; width:40px; height:1px; background:var(--gold); opacity:.6; }
+.hero-title {
+  font-family:'Playfair Display', serif;
+  font-size: clamp(4rem, 12vw, 9rem);
+  font-weight:900; line-height:.88;
+  color: var(--cream);
+  margin-bottom:1.5rem;
+  opacity:0; animation: fadeUp 1s ease .4s forwards;
+}
+.hero-title em { font-style:italic; color:var(--gold); }
+.hero-subtitle {
+  font-size:clamp(1.1rem, 2.5vw, 1.5rem); font-weight:300;
+  color:var(--text-light); letter-spacing:.05em; line-height:1.6;
+  max-width:600px; margin:0 auto 3rem;
+  opacity:0; animation: fadeUp .9s ease .6s forwards;
+}
+.hero-route {
+  display:flex; align-items:center; justify-content:center; gap:1.5rem;
+  flex-wrap:wrap;
+  opacity:0; animation: fadeUp .9s ease .8s forwards;
+}
+.route-stop {
+  display:flex; flex-direction:column; align-items:center; gap:.3rem;
+}
+.route-stop .city {
+  font-family:'Playfair Display', serif; font-size:1rem; font-weight:700;
+  color:var(--gold-light);
+}
+.route-stop .days {
+  font-family:'Montserrat', sans-serif; font-size:.55rem; font-weight:500;
+  letter-spacing:.15em; text-transform:uppercase; color:var(--text-light);
+}
+.route-arrow {
+  font-size:1.2rem; color:rgba(201,160,74,0.4); margin-bottom:1rem;
+}
+.hero-scroll {
+  position:absolute; bottom:3rem; left:50%; transform:translateX(-50%);
+  z-index:10; display:flex; flex-direction:column; align-items:center; gap:.5rem;
+  pointer-events: none;
+  opacity:0; animation: fadeIn 1s ease 1.2s forwards;
+}
+.scroll-label {
+  font-family:'Montserrat', sans-serif; font-size:.55rem; letter-spacing:.25em;
+  text-transform:uppercase; color:var(--text-light);
+}
+.scroll-line {
+  width:1px; height:50px; background:linear-gradient(to bottom, var(--gold), transparent);
+  animation: scrollPulse 2s ease-in-out infinite;
+}
+@keyframes scrollPulse { 0%,100%{ opacity:.4; transform:scaleY(1); } 50%{ opacity:1; transform:scaleY(1.2); } }
+@keyframes fadeUp { from{opacity:0;transform:translateY(25px)} to{opacity:1;transform:translateY(0)} }
+@keyframes fadeIn { from{opacity:0} to{opacity:1} }
+
+/* Ensure hero text always becomes visible even if animation fails */
+@media (max-width: 768px) {
+  .hero-tag, .hero-title, .hero-subtitle, .hero-route, .hero-scroll {
+    animation-duration: 0.01s !important;
+    animation-delay: 0s !important;
+  }
+}
+
+/* ─── SECTION COMMON ─── */
+section { position:relative; z-index:0; }
+.section-inner { max-width:1200px; margin:0 auto; padding:6rem 2rem; width: 100%; }
+.section-header { text-align:center; margin-bottom:5rem; }
+.section-eyebrow {
+  font-family:'Montserrat', sans-serif; font-size:.6rem; font-weight:600;
+  letter-spacing:.4em; text-transform:uppercase; color:var(--gold);
+  display:flex; align-items:center; justify-content:center; gap:.75rem; margin-bottom:1.2rem;
+}
+.section-eyebrow::before, .section-eyebrow::after { content:''; width:30px; height:1px; background:var(--gold); opacity:.5; }
+.section-title {
+  font-family:'Playfair Display', serif; font-size:clamp(2rem,5vw,3.5rem);
+  font-weight:700; line-height:1.1; color:var(--cream);
+}
+.section-title em { font-style:italic; color:var(--gold); }
+.section-desc {
+  margin-top:1rem; font-size:1.1rem; color:var(--text-light); line-height:1.7;
+  max-width:600px; margin-left:auto; margin-right:auto; margin-top:1rem;
+}
+
+/* ─── OVERVIEW CARDS ─── */
+#overview { background: linear-gradient(to bottom, #0E0B06, #150F08); }
+.overview-grid {
+  display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:1.5rem;
+}
+.overview-card {
+  border:1px solid var(--border); border-radius:2px;
+  padding:2rem; position:relative; overflow:hidden;
+  background:rgba(201,160,74,0.03);
+  transition: border-color .3s, transform .3s, background .3s;
+}
+.overview-card::before {
+  content:''; position:absolute; top:0; left:0; right:0; height:2px;
+  background:linear-gradient(to right, transparent, var(--gold), transparent);
+  opacity:0; transition:opacity .3s;
+}
+.overview-card:hover { border-color:rgba(201,160,74,0.5); transform:translateY(-4px); background:rgba(201,160,74,0.06); }
+.overview-card:hover::before { opacity:1; }
+.card-icon { font-size:2rem; margin-bottom:1rem; }
+.card-number {
+  font-family:'Playfair Display', serif; font-size:3rem; font-weight:900;
+  color:var(--gold); opacity:.2; position:absolute; top:1rem; right:1.5rem;
+  line-height:1;
+}
+.card-title {
+  font-family:'Playfair Display', serif; font-size:1.1rem; font-weight:700;
+  color:var(--gold-light); margin-bottom:.5rem;
+}
+.card-desc { font-size:.95rem; color:var(--text-light); line-height:1.6; }
+
+/* ─── FLIGHT BANNER ─── */
+#flight {
+  background: linear-gradient(135deg, #0a0e1a 0%, #0d1525 40%, #0e100a 100%);
+  border-top:1px solid var(--border); border-bottom:1px solid var(--border);
+}
+.flight-content {
+  display:flex; align-items:center; justify-content:space-between;
+  flex-wrap:wrap; gap:3rem;
+}
+.flight-info h2 {
+  font-family:'Playfair Display', serif; font-size:clamp(1.6rem,3vw,2.4rem);
+  font-weight:700; color:var(--cream); margin-bottom:1rem;
+}
+.flight-info p { font-size:1rem; color:var(--text-light); line-height:1.7; max-width:500px; }
+.flight-visual {
+  display:flex; align-items:center; gap:1.5rem;
+  background:rgba(201,160,74,0.05); border:1px solid var(--border);
+  border-radius:2px; padding:2rem 2.5rem;
+  flex-wrap: wrap; justify-content: center;
+  max-width: 100%;
+}
+.flight-city { text-align:center; }
+.flight-city .code {
+  font-family:'Playfair Display', serif; font-size:2.5rem; font-weight:900;
+  color:var(--gold); line-height:1;
+}
+.flight-city .name {
+  font-family:'Montserrat', sans-serif; font-size:.6rem; letter-spacing:.15em;
+  text-transform:uppercase; color:var(--text-light); margin-top:.3rem;
+}
+.flight-path {
+  display:flex; flex-direction:column; align-items:center; gap:.3rem; flex:1; min-width:80px; max-width:150px;
+}
+.flight-line { width:100%; height:1px; background:linear-gradient(to right, var(--gold), transparent, var(--gold)); position:relative; }
+.flight-line::after { content:'✈'; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); color:var(--gold); font-size:1rem; }
+.flight-duration {
+  font-family:'Montserrat', sans-serif; font-size:.55rem; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--text-light);
+}
+
+/* ─── CITY TABS ─── */
+.city-tabs {
+  display:flex; justify-content:center; gap:0;
+  margin-bottom:3rem; border:1px solid var(--border); border-radius:2px;
+  overflow:hidden; width:fit-content; margin-left:auto; margin-right:auto;
+}
+.city-tab {
+  font-family:'Montserrat', sans-serif; font-size:.65rem; font-weight:600;
+  letter-spacing:.2em; text-transform:uppercase; padding:1rem 2.5rem;
+  background:transparent; border:none; cursor:pointer;
+  color:var(--text-light); transition:.3s; position:relative;
+}
+.city-tab.active, .city-tab:hover { color:var(--gold); background:rgba(201,160,74,0.08); }
+.city-tab.active::after {
+  content:''; position:absolute; bottom:0; left:0; right:0; height:2px;
+  background:var(--gold);
+}
+
+/* ─── ITINERARY DAYS ─── */
+#barcelona { background: linear-gradient(to bottom, #150F08, #0f1520); }
+#madrid { background: linear-gradient(to bottom, #0f1520, #150F08); }
+
+.days-grid { display:grid; gap:2rem; }
+.day-card {
+  border:1px solid var(--border); border-radius:2px;
+  overflow:hidden; position:relative;
+  background:rgba(15,10,5,0.6);
+  transition: box-shadow .3s;
+}
+.day-card:hover { box-shadow:0 0 40px rgba(201,160,74,0.07); }
+.day-header {
+  display:flex; align-items:stretch; gap:0;
+  border-bottom:1px solid var(--border);
+}
+.day-num-block {
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  padding:1.5rem 2rem; min-width:100px;
+  background:rgba(201,160,74,0.06); border-right:1px solid var(--border);
+}
+.day-num {
+  font-family:'Playfair Display', serif; font-size:2.5rem; font-weight:900;
+  color:var(--gold); line-height:1;
+}
+.day-label {
+  font-family:'Montserrat', sans-serif; font-size:.5rem; font-weight:600;
+  letter-spacing:.2em; text-transform:uppercase; color:var(--text-light);
+}
+.day-title-block { padding:1.5rem 2rem; flex:1; }
+.day-badge {
+  display:inline-block; font-family:'Montserrat', sans-serif; font-size:.55rem;
+  font-weight:600; letter-spacing:.15em; text-transform:uppercase;
+  padding:.3rem .8rem; border-radius:20px; margin-bottom:.6rem;
+}
+.badge-barcelona { background:rgba(27,74,138,0.3); color:#6CA8E8; border:1px solid rgba(27,74,138,0.4); }
+.badge-daytrip { background:rgba(74,110,74,0.3); color:#8CC88C; border:1px solid rgba(74,110,74,0.4); }
+.badge-madrid { background:rgba(155,35,53,0.3); color:#E88CA8; border:1px solid rgba(155,35,53,0.4); }
+.badge-segovia { background:rgba(100,70,20,0.4); color:#E8C87A; border:1px solid rgba(150,110,40,0.4); }
+.day-title-h3 {
+  font-family:'Playfair Display', serif; font-size:1.4rem; font-weight:700;
+  color:var(--cream);
+}
+.day-body { padding:2rem; }
+.timeline { position:relative; display:flex; flex-direction:column; gap:0; }
+.timeline::before {
+  content:''; position:absolute; left:60px; top:0; bottom:0; width:1px;
+  background:linear-gradient(to bottom, var(--gold), rgba(201,160,74,0.1));
+}
+.tl-item { display:flex; gap:1.5rem; padding-bottom:1.5rem; position:relative; }
+.tl-time {
+  min-width:60px; max-width: 60px; text-align:right;
+  font-family:'Montserrat', sans-serif; font-size:.6rem; font-weight:600;
+  letter-spacing:.1em; color:var(--gold); padding-top:.2rem;
+  flex-shrink: 0;
+}
+.tl-dot {
+  position:absolute; left:53px; top:.35rem;
+  width:16px; height:16px; border-radius:50%;
+  border:2px solid var(--gold);
+  background:var(--brown-deep);
+  display:flex; align-items:center; justify-content:center;
+  font-size:.5rem; z-index:1;
+}
+.tl-content { flex:1; padding-left:2rem; }
+.tl-place {
+  font-family:'Playfair Display', serif; font-size:1rem; font-weight:700;
+  color:var(--cream); margin-bottom:.2rem;
+}
+.tl-note { font-size:.9rem; color:var(--text-light); line-height:1.5; }
+.tl-tags { display:flex; flex-wrap:wrap; gap:.4rem; margin-top:.5rem; }
+.tl-tag {
+  font-family:'Montserrat', sans-serif; font-size:.5rem; font-weight:500;
+  letter-spacing:.1em; text-transform:uppercase;
+  padding:.2rem .6rem; border:1px solid var(--border); border-radius:2px;
+  color:var(--text-light);
+}
+.tl-tag.food { border-color:rgba(201,160,74,0.4); color:var(--gold-light); }
+.tl-tag.sight { border-color:rgba(27,74,138,0.5); color:#8ABCF0; }
+.tl-tag.special { border-color:rgba(74,110,74,0.5); color:#8CC88C; }
+.tl-tag.tip { border-color:rgba(200,80,40,0.4); color:#E89880; }
+
+/* ─── JULY WEATHER STRIP ─── */
+.weather-strip {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 1px; background: var(--border);
+  border: 1px solid var(--border); border-radius: 2px;
+  overflow: hidden; margin-bottom: 4rem;
+}
+.weather-cell {
+  background: rgba(201,160,74,0.04); padding: 1.4rem 1.2rem;
+  display: flex; flex-direction: column; align-items: center; gap: .4rem; text-align: center;
+  transition: background .3s;
+}
+.weather-cell:hover { background: rgba(201,160,74,0.08); }
+.weather-icon { font-size: 1.6rem; }
+.weather-val {
+  font-family: 'Playfair Display', serif; font-size: 1.5rem; font-weight: 700;
+  color: var(--gold); line-height: 1;
+}
+.weather-label {
+  font-family: 'Montserrat', sans-serif; font-size: .55rem; font-weight: 600;
+  letter-spacing: .15em; text-transform: uppercase; color: var(--text-light);
+}
+
+/* ─── FESTIVAL CALLOUT ─── */
+.festival-row {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem; margin-top: 3rem;
+}
+.festival-card {
+  border: 1px solid rgba(201,160,74,0.2); border-radius: 2px;
+  padding: 1.5rem; background: rgba(201,160,74,0.03);
+  display: flex; gap: 1rem; align-items: flex-start;
+  transition: border-color .3s, background .3s;
+}
+.festival-card:hover { border-color: rgba(201,160,74,0.45); background: rgba(201,160,74,0.06); }
+.festival-city-dot {
+  width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: .45rem;
+}
+.dot-bcn { background: #6CA8E8; }
+.dot-mad { background: #E88CA8; }
+.festival-name {
+  font-family: 'Playfair Display', serif; font-size: 1rem; font-weight: 700;
+  color: var(--gold-light); margin-bottom: .25rem;
+}
+.festival-dates {
+  font-family: 'Montserrat', sans-serif; font-size: .55rem; font-weight: 600;
+  letter-spacing: .12em; color: var(--text-light); text-transform: uppercase; margin-bottom: .4rem;
+}
+.festival-desc { font-size: .88rem; color: var(--text-light); line-height: 1.55; }
+
+/* ─── SEASON ALERT ─── */
+.season-alert {
+  display: flex; gap: 1rem; align-items: flex-start;
+  padding: 1.2rem 1.5rem; border-radius: 2px; margin: 2rem 0;
+  border: 1px solid rgba(192,78,40,0.4);
+  background: rgba(192,78,40,0.06);
+}
+.season-alert-icon { font-size: 1.3rem; flex-shrink: 0; }
+.season-alert-text { font-size: .9rem; color: var(--text-light); line-height: 1.6; }
+.season-alert-text strong { color: #E89880; }
+.season-alert.info { border-color: rgba(27,74,138,0.4); background: rgba(27,74,138,0.06); }
+.season-alert.info .season-alert-text strong { color: #8ABCF0; }
+.season-alert.good { border-color: rgba(74,110,74,0.4); background: rgba(74,110,74,0.06); }
+.season-alert.good .season-alert-text strong { color: #8CC88C; }
+
+/* ─── PACKING LIST ─── */
+.packing-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1rem; margin-top: 2rem;
+}
+.pack-item {
+  display: flex; align-items: center; gap: .75rem;
+  padding: .9rem 1.2rem; border: 1px solid var(--border); border-radius: 2px;
+  font-size: .9rem; color: var(--text-light);
+  transition: border-color .3s, color .3s;
+}
+.pack-item:hover { border-color: rgba(201,160,74,0.4); color: var(--cream); }
+.pack-item-icon { font-size: 1.1rem; flex-shrink: 0; }
+
+/* ─── DINING ─── */
+#dining { background:linear-gradient(to bottom, #0f1520, #0E0B06); }
+.dining-tabs {
+  display:flex; justify-content:center; gap:0; margin-bottom:3rem;
+  border:1px solid var(--border); border-radius:2px; overflow:hidden;
+  width:fit-content; margin-left:auto; margin-right:auto;
+}
+.dining-tab {
+  font-family:'Montserrat', sans-serif; font-size:.65rem; font-weight:600;
+  letter-spacing:.2em; text-transform:uppercase; padding:1rem 2rem;
+  background:transparent; border:none; cursor:pointer;
+  color:var(--text-light); transition:.3s; position:relative;
+}
+.dining-tab.active { color:var(--gold); background:rgba(201,160,74,0.08); }
+.dining-tab.active::after {
+  content:''; position:absolute; bottom:0; left:0; right:0; height:2px; background:var(--gold);
+}
+.dining-panel { display:none; }
+.dining-panel.active { display:block; }
+.dining-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(300px, 1fr)); gap:1.5rem; }
+.dining-card {
+  border:1px solid var(--border); border-radius:2px; overflow:hidden;
+  background:rgba(15,10,5,0.5); position:relative;
+  transition:transform .3s, border-color .3s, box-shadow .3s;
+}
+.dining-card:hover { transform:translateY(-5px); border-color:rgba(201,160,74,0.45); box-shadow:0 20px 50px rgba(0,0,0,0.4); }
+.dining-img-stub {
+  height:160px; position:relative; overflow:hidden;
+  background:linear-gradient(135deg, #1a1005 0%, #2a1a08 100%);
+  display:flex; align-items:center; justify-content:center;
+}
+.dining-pattern {
+  position:absolute; inset:0; opacity:.12;
+  background-image: repeating-linear-gradient(45deg, var(--gold) 0, var(--gold) 1px, transparent 0, transparent 50%);
+  background-size:20px 20px;
+}
+.dining-emoji { font-size:3rem; position:relative; z-index:1; }
+.dining-type-bar {
+  position:absolute; bottom:0; left:0; right:0; height:2px;
+}
+.barcelona-bar { background:linear-gradient(to right, var(--barcelona-blue), var(--gold)); }
+.madrid-bar { background:linear-gradient(to right, var(--madrid-crimson), var(--gold)); }
+.dining-info { padding:1.5rem; }
+.dining-name {
+  font-family:'Playfair Display', serif; font-size:1.15rem; font-weight:700;
+  color:var(--cream); margin-bottom:.3rem;
+}
+.dining-type {
+  font-family:'Montserrat', sans-serif; font-size:.55rem; font-weight:600;
+  letter-spacing:.15em; text-transform:uppercase; color:var(--gold); margin-bottom:.6rem;
+}
+.dining-desc { font-size:.9rem; color:var(--text-light); line-height:1.55; margin-bottom:1rem; }
+.dining-meta {
+  display:flex; gap:1rem; align-items:center; flex-wrap:wrap;
+}
+.meta-item {
+  display:flex; align-items:center; gap:.3rem;
+  font-family:'Montserrat', sans-serif; font-size:.55rem;
+  color:var(--text-light); letter-spacing:.05em;
+}
+.star-rating { color:var(--gold); font-size:.7rem; }
+.dining-rating-val { color:var(--gold); font-weight:600; font-size:.7rem; }
+.hours-chip {
+  font-family:'Montserrat', sans-serif; font-size:.5rem; font-weight:500;
+  letter-spacing:.1em; padding:.25rem .6rem;
+  background:rgba(74,110,74,0.2); border:1px solid rgba(74,110,74,0.3);
+  border-radius:2px; color:#8CC88C;
+}
+
+/* ─── MAP SECTION ─── */
+#maps { background:linear-gradient(to bottom, #0E0B06, #100d07); }
+.maps-tabs {
+  display:flex; gap:1rem; margin-bottom:2rem; justify-content:center;
+}
+.map-tab-btn {
+  font-family:'Montserrat', sans-serif; font-size:.6rem; font-weight:600;
+  letter-spacing:.15em; text-transform:uppercase;
+  padding:.7rem 1.5rem; border-radius:2px;
+  border:1px solid var(--border); background:transparent;
+  color:var(--text-light); cursor:pointer; transition:.3s;
+}
+.map-tab-btn.active { background:rgba(201,160,74,0.1); border-color:var(--gold); color:var(--gold); }
+.map-panel { display:none; }
+.map-panel.active { display:block; }
+.map-frame {
+  border:1px solid var(--border); border-radius:2px; overflow:hidden;
+  height:480px; position:relative; min-height:480px;
+}
+/* Force Leaflet containers visible — Leaflet cannot render into hidden elements */
+.map-frame.reveal, .map-panel .reveal {
+  opacity: 1 !important;
+  transform: none !important;
+  visibility: visible !important;
+  transition: none !important;
+}
+.map-frame iframe { width:100%; height:100%; border:none; }
+.map-legend {
+  display:flex; flex-wrap:wrap; gap:.75rem; margin-top:1.5rem; justify-content:center;
+}
+.legend-item {
+  display:flex; align-items:center; gap:.4rem;
+  font-family:'Montserrat', sans-serif; font-size:.55rem; letter-spacing:.08em;
+  color:var(--text-light);
+}
+.legend-dot { width:8px; height:8px; border-radius:50%; }
+.legend-dot.sight { background:#6CA8E8; }
+.legend-dot.food { background:var(--gold); }
+.legend-dot.special { background:#8CC88C; }
+
+/* ─── TIPS SECTION ─── */
+#tips { background:linear-gradient(to bottom, #100d07, #0E0B06); }
+.tips-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:1.5rem; }
+.tip-card {
+  border:1px solid var(--border); border-radius:2px; padding:2rem;
+  background:rgba(201,160,74,0.02); position:relative; overflow:hidden;
+  transition:transform .3s, border-color .3s;
+}
+.tip-card:hover { transform:translateY(-3px); border-color:rgba(201,160,74,0.4); }
+.tip-card::after {
+  content:''; position:absolute; bottom:0; right:0;
+  width:80px; height:80px; border-radius:50%;
+  background:radial-gradient(circle, rgba(201,160,74,0.06), transparent);
+  pointer-events:none;
+}
+.tip-icon { font-size:1.8rem; margin-bottom:1rem; }
+.tip-title {
+  font-family:'Playfair Display', serif; font-size:1.05rem; font-weight:700;
+  color:var(--gold-light); margin-bottom:.6rem;
+}
+.tip-text { font-size:.9rem; color:var(--text-light); line-height:1.65; }
+
+/* ─── FOOTER ─── */
+footer {
+  border-top:1px solid var(--border); padding:3rem 2rem;
+  text-align:center; background:#0a0804;
+}
+.footer-logo {
+  font-family:'Playfair Display', serif; font-size:1.8rem; font-weight:900;
+  color:var(--gold); margin-bottom:.75rem;
+  display:block; text-decoration:none;
+}
+.footer-tagline {
+  font-family:'EB Garamond', serif; font-style:italic;
+  font-size:1rem; color:var(--text-light); margin-bottom:2rem;
+}
+.footer-links { display:flex; justify-content:center; gap:2rem; flex-wrap:wrap; margin-bottom:2rem; }
+.footer-links a {
+  font-family:'Montserrat', sans-serif; font-size:.55rem; letter-spacing:.2em;
+  text-transform:uppercase; color:var(--text-light); text-decoration:none; transition:.2s;
+}
+.footer-links a:hover { color:var(--gold); }
+.footer-copy { font-size:.8rem; color:rgba(200,184,152,0.35); }
+
+/* ─── DIVIDER ─── */
+.ornament-divider {
+  display:flex; align-items:center; justify-content:center; gap:1rem;
+  padding:3rem 2rem 0; color:rgba(201,160,74,0.3);
+  font-size:.7rem; letter-spacing:.3em;
+}
+.ornament-divider::before, .ornament-divider::after {
+  content:''; flex:1; max-width:200px; height:1px; background:var(--border);
+}
+
+/* ─── SCROLL ANIMATIONS ─── */
+.reveal { opacity:0; transform:translateY(30px); transition:opacity .8s ease, transform .8s ease; }
+.reveal.visible { opacity:1; transform:translateY(0); }
+.reveal-delay-1 { transition-delay:.1s; }
+.reveal-delay-2 { transition-delay:.2s; }
+.reveal-delay-3 { transition-delay:.3s; }
+.reveal-delay-4 { transition-delay:.4s; }
+
+/* On mobile/touch — skip all reveal animations, show everything immediately */
+@media(max-width: 768px) {
+  .reveal, .reveal.visible {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+    transition-delay: 0s !important;
+  }
+}
+@media (hover: none) {
+  .reveal, .reveal.visible {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+    transition-delay: 0s !important;
+  }
+}
+
+/* Reduce motion: skip animations */
+@media (prefers-reduced-motion: reduce) {
+  .reveal, .reveal.visible { transform: none !important; transition: opacity .3s ease !important; }
+}
+
+/* ─── SPECIAL HIGHLIGHT ─── */
+.highlight-sunset {
+  background:linear-gradient(135deg, rgba(201,160,74,0.08), rgba(192,78,40,0.06));
+  border:1px solid rgba(201,160,74,0.35); border-radius:2px; padding:1.5rem;
+  margin:1.5rem 0; position:relative; overflow:hidden;
+}
+.highlight-sunset::before {
+  content:''; position:absolute; top:0; left:0; bottom:0; width:3px;
+  background:linear-gradient(to bottom, var(--gold), var(--terracotta));
+}
+.highlight-title {
+  font-family:'Playfair Display', serif; font-style:italic; font-size:1.05rem;
+  color:var(--gold-light); margin-bottom:.4rem;
+}
+.highlight-text { font-size:.9rem; color:var(--text-light); line-height:1.6; }
+
+/* ─── LINKS ─── */
+.ext-link {
+  display: inline-flex; align-items: center; gap: .35rem;
+  font-family: 'Montserrat', sans-serif; font-size: .55rem; font-weight: 600;
+  letter-spacing: .12em; text-transform: uppercase;
+  color: var(--gold); text-decoration: none;
+  border: 1px solid rgba(201,160,74,0.3); border-radius: 2px;
+  padding: .3rem .7rem; margin-top: .6rem; margin-right: .4rem;
+  transition: background .2s, border-color .2s, color .2s;
+  cursor: pointer;
+  -webkit-tap-highlight-color: rgba(201,160,74,0.15);
+}
+.ext-link:hover { background: rgba(201,160,74,0.12); border-color: var(--gold); color: var(--gold-light); }
+.ext-link svg { width: 10px; height: 10px; flex-shrink: 0; }
+.ext-link[href^="tel"] { letter-spacing:.05em; text-transform: none; }
+.links-row { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .75rem; }
+.dining-links { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .8rem; padding-top: .8rem; border-top: 1px solid var(--border); }
+
+/* ─── BUDGET ─── */
+#budget { background: linear-gradient(to bottom, #0E0B06, #0a0804); }
+.budget-tiers {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin-bottom: 3rem;
+}
+.tier-card {
+  border: 1px solid var(--border); border-radius: 2px; overflow: hidden;
+  transition: transform .3s, box-shadow .3s;
+}
+.tier-card:hover { transform: translateY(-4px); box-shadow: 0 20px 50px rgba(0,0,0,0.4); }
+.tier-card.featured { border-color: rgba(201,160,74,0.6); box-shadow: 0 0 30px rgba(201,160,74,0.07); }
+.tier-header {
+  padding: 1.5rem; text-align: center;
+  border-bottom: 1px solid var(--border);
+}
+.tier-label {
+  font-family: 'Montserrat', sans-serif; font-size: .55rem; font-weight: 700;
+  letter-spacing: .25em; text-transform: uppercase; color: var(--text-light); margin-bottom: .5rem;
+}
+.tier-total {
+  font-family: 'Playfair Display', serif; font-size: 2.4rem; font-weight: 900; line-height: 1;
+}
+.tier-card.budget-tier .tier-total { color: #8CC88C; }
+.tier-card.mid-tier .tier-total { color: var(--gold); }
+.tier-card.lux-tier .tier-total { color: #E8A878; }
+.tier-per-day {
+  font-family: 'Montserrat', sans-serif; font-size: .6rem; color: var(--text-light);
+  margin-top: .3rem;
+}
+.tier-badge {
+  display: inline-block; font-family: 'Montserrat', sans-serif; font-size: .5rem;
+  font-weight: 700; letter-spacing: .12em; text-transform: uppercase;
+  padding: .25rem .75rem; border-radius: 20px; margin-top: .6rem;
+}
+.tier-card.mid-tier .tier-badge { background: rgba(201,160,74,0.15); color: var(--gold); border: 1px solid rgba(201,160,74,0.3); }
+.tier-card.budget-tier .tier-badge { background: rgba(74,110,74,0.15); color: #8CC88C; border: 1px solid rgba(74,110,74,0.3); }
+.tier-card.lux-tier .tier-badge { background: rgba(232,168,120,0.12); color: #E8A878; border: 1px solid rgba(232,168,120,0.3); }
+.tier-body { padding: 1.5rem; background: rgba(15,10,5,0.5); }
+.tier-row {
+  display: flex; justify-content: space-between; align-items: baseline;
+  padding: .6rem 0; border-bottom: 1px solid rgba(201,160,74,0.08);
+  font-size: .9rem;
+}
+.tier-row:last-child { border-bottom: none; }
+.tier-row-label { color: var(--text-light); }
+.tier-row-val { font-family: 'Montserrat', sans-serif; font-size: .75rem; font-weight: 600; color: var(--cream); }
+
+.budget-breakdown {
+  border: 1px solid var(--border); border-radius: 2px; overflow: hidden; margin-bottom: 3rem;
+}
+.breakdown-header {
+  padding: 1.5rem 2rem; background: rgba(201,160,74,0.05);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 1rem;
+}
+.breakdown-header h3 {
+  font-family: 'Playfair Display', serif; font-size: 1.2rem; font-weight: 700; color: var(--gold-light);
+}
+.breakdown-body { padding: 0; }
+.breakdown-row {
+  display: grid; grid-template-columns: 2fr 1fr 1fr 1fr;
+  padding: 1rem 2rem; border-bottom: 1px solid rgba(201,160,74,0.06);
+  align-items: center; transition: background .2s;
+}
+.breakdown-row:hover { background: rgba(201,160,74,0.03); }
+.breakdown-row:last-child { border-bottom: none; }
+.breakdown-row.header-row {
+  background: rgba(201,160,74,0.05);
+  font-family: 'Montserrat', sans-serif; font-size: .55rem; font-weight: 700;
+  letter-spacing: .15em; text-transform: uppercase; color: var(--text-light);
+  padding: .8rem 2rem;
+}
+.breakdown-category { font-size: .95rem; color: var(--cream); }
+.breakdown-note { font-size: .8rem; color: var(--text-light); margin-top: .2rem; }
+.breakdown-val {
+  font-family: 'Montserrat', sans-serif; font-size: .75rem; font-weight: 600;
+  text-align: right;
+}
+.val-budget { color: #8CC88C; }
+.val-mid { color: var(--gold); }
+.val-lux { color: #E8A878; }
+.breakdown-bar-wrap { height: 3px; background: rgba(201,160,74,0.08); border-radius: 2px; margin-top: .5rem; overflow: hidden; }
+.breakdown-bar { height: 100%; border-radius: 2px; background: var(--gold); transition: width .6s ease; }
+
+.budget-notes {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1rem; margin-top: 2rem;
+}
+.budget-note-card {
+  border: 1px solid var(--border); border-radius: 2px; padding: 1.2rem 1.5rem;
+  background: rgba(201,160,74,0.02); display: flex; gap: .75rem;
+}
+.budget-note-icon { font-size: 1.2rem; flex-shrink: 0; }
+.budget-note-text { font-size: .88rem; color: var(--text-light); line-height: 1.6; }
+.budget-note-text strong { color: var(--cream); }
+
+.fx-note {
+  text-align: center; font-family: 'Montserrat', sans-serif; font-size: .6rem;
+  letter-spacing: .1em; color: rgba(200,184,152,0.4); margin-top: 2rem;
+}
+
+@media(max-width: 768px) {
+  /* ── NAV ── */
+  nav {
+    padding: .9rem 1.2rem;
+    padding-left: max(1.2rem, env(safe-area-inset-left, 1.2rem));
+    padding-right: max(1.2rem, env(safe-area-inset-right, 1.2rem));
+  }
+  .nav-logo { font-size: .95rem; }
+  .nav-links { display: none !important; }
+  .nav-toggle { display: flex; cursor: pointer; }
+
+  /* ── HERO ── */
+  #hero { min-height: 100svh; }
+  .hero-title { font-size: clamp(2.8rem, 15vw, 5rem); }
+  .hero-subtitle { font-size: 1rem; margin-bottom: 2rem; }
+  .hero-route { flex-direction: column; gap: .5rem; align-items: center; }
+  .hero-route .route-arrow { transform: rotate(90deg); margin-bottom: 0; }
+  .hero-ring:nth-child(3), .hero-ring:nth-child(4) { display: none; }
+  .hero-tag { font-size: .55rem; letter-spacing: .25em; }
+  .hero-scroll { bottom: 1.5rem; }
+  .hero-content { padding: 1.5rem 1rem; }
+
+  /* ── SECTIONS ── */
+  .section-inner { padding: 3rem 1.2rem; }
+  .section-title { font-size: clamp(1.8rem, 7vw, 2.6rem); }
+  .section-header { margin-bottom: 2.5rem; }
+  .section-desc { font-size: 1rem; }
+  .section-eyebrow { font-size: .55rem; }
+
+  /* ── OVERVIEW ── */
+  .overview-grid { grid-template-columns: 1fr; gap: 1rem; }
+  .card-number { font-size: 2rem; }
+  .card-title { font-size: 1rem; }
+  .card-desc { font-size: .88rem; }
+
+  /* ── WEATHER STRIP ── */
+  .weather-strip { grid-template-columns: repeat(3, 1fr); }
+  .weather-val { font-size: 1.1rem; }
+  .weather-label { font-size: .42rem; letter-spacing: .05em; }
+
+  /* ── FESTIVAL ROW ── */
+  .festival-row { grid-template-columns: 1fr; gap: 1rem; }
+  .festival-card { padding: 1.2rem; }
+  .festival-name { font-size: .95rem; }
+  .festival-dates { font-size: .5rem; }
+  .festival-desc { font-size: .85rem; }
+
+  /* ── SEASON ALERTS ── */
+  .season-alert { padding: 1rem 1.2rem; gap: .75rem; }
+  .season-alert-icon { font-size: 1.1rem; }
+  .season-alert-text { font-size: .85rem; }
+
+  /* ── FLIGHT ── */
+  .flight-content { flex-direction: column; gap: 2rem; }
+  .flight-visual { flex-wrap: wrap; justify-content: center; padding: 1.2rem; gap: 1rem; }
+  .flight-city .code { font-size: 1.8rem; }
+  .flight-path { min-width: 60px; }
+  .flight-info h2 { font-size: 1.4rem; }
+
+  /* ── DAY CARDS ── */
+  .day-header { flex-direction: column; }
+  .day-num-block {
+    flex-direction: row; gap: 1rem; padding: 1rem 1.5rem;
+    border-right: none; border-bottom: 1px solid var(--border);
+    min-width: unset; justify-content: flex-start;
+  }
+  .day-num { font-size: 2rem; }
+  .day-title-block { padding: 1rem 1.5rem; }
+  .day-title-h3 { font-size: 1.1rem; }
+  .day-body { padding: 1.2rem; }
+  .day-badge { font-size: .48rem; }
+
+  /* ── TIMELINE ── */
+  .timeline::before { left: 44px; }
+  .tl-item { gap: 1rem; padding-bottom: 1.5rem; }
+  .tl-time { min-width: 44px; max-width: 44px; font-size: .52rem; padding-top: .15rem; }
+  .tl-dot { left: 37px; width: 14px; height: 14px; font-size: .45rem; }
+  .tl-content { padding-left: 1.2rem; }
+  .tl-place { font-size: .95rem; }
+  .tl-note { font-size: .87rem; }
+  .tl-tags { gap: .3rem; flex-wrap: wrap; }
+  .tl-tag { font-size: .48rem; padding: .18rem .5rem; }
+
+  /* ── HIGHLIGHT BOXES ── */
+  .highlight-sunset { padding: 1.2rem 1.2rem 1.2rem 1.5rem; }
+  .highlight-title { font-size: .95rem; }
+  .highlight-text { font-size: .88rem; }
+
+  /* ── EXT LINKS ── */
+  .ext-link { font-size: .52rem; padding: .5rem .7rem; min-height: 36px; display: inline-flex; align-items: center; }
+  .links-row { gap: .4rem; flex-wrap: wrap; }
+
+  /* ── DINING ── */
+  .dining-tabs { width: 100%; }
+  .dining-tab { flex: 1; padding: .9rem 1rem; font-size: .6rem; min-height: 44px; }
+  .dining-grid { grid-template-columns: 1fr; gap: 1.2rem; }
+  .dining-img-stub { height: 130px; }
+  .dining-name { font-size: 1.05rem; }
+  .dining-desc { font-size: .88rem; }
+  .dining-meta { gap: .6rem; flex-wrap: wrap; }
+  .hours-chip { font-size: .48rem; }
+  .dining-links { gap: .4rem; flex-wrap: wrap; }
+
+  /* ── MAPS ── */
+  .maps-tabs { gap: .5rem; flex-wrap: wrap; justify-content: center; }
+  .map-tab-btn { font-size: .55rem; padding: .7rem .9rem; min-height: 44px; flex: 1; min-width: 80px; text-align: center; }
+  .map-frame { height: 300px; min-height: 300px; }
+  .map-frame > div[id^="leaflet"] { height: 300px !important; }
+  .map-legend { gap: .5rem; }
+  .legend-item { font-size: .5rem; }
+
+  /* ── TIPS ── */
+  .tips-grid { grid-template-columns: 1fr; gap: 1rem; }
+  .tip-card { padding: 1.4rem; }
+  .tip-title { font-size: .95rem; }
+  .tip-text { font-size: .88rem; }
+
+  /* ── BUDGET TIERS ── */
+  .budget-tiers { grid-template-columns: 1fr; gap: 1.2rem; }
+  .tier-total { font-size: 2rem; }
+  .tier-header { padding: 1.2rem; }
+  .tier-body { padding: 1.2rem; }
+  .tier-row { padding: .5rem 0; font-size: .88rem; }
+  .tier-row-val { font-size: .7rem; }
+
+  /* ── BUDGET BREAKDOWN ── */
+  .budget-breakdown { overflow-x: hidden; }
+  .breakdown-header { padding: 1.2rem; }
+  .breakdown-header h3 { font-size: 1rem; }
+  .breakdown-row {
+    grid-template-columns: 1fr;
+    padding: 1rem 1.2rem;
+    gap: .3rem;
+    border-bottom: 1px solid rgba(201,160,74,0.08);
+  }
+  .breakdown-row.header-row { display: none; }
+  .breakdown-category { font-size: .9rem; }
+  .breakdown-note { font-size: .78rem; }
+  .breakdown-val { text-align: left; font-size: .7rem; display: inline-block; margin-right: .7rem; }
+  .val-budget::before { content: 'Budget: '; font-size: .6rem; opacity: .6; }
+  .val-mid::before { content: 'Mid: '; font-size: .6rem; opacity: .6; }
+  .val-lux::before { content: 'Luxury: '; font-size: .6rem; opacity: .6; }
+  .budget-notes { grid-template-columns: 1fr; gap: .8rem; }
+  .budget-note-card { padding: 1rem 1.2rem; }
+  .budget-note-text { font-size: .85rem; }
+  .fx-note { font-size: .52rem; padding: 0 1rem; }
+
+  /* ── FOOTER ── */
+  footer { padding: 2rem 1.2rem; }
+  .footer-logo { font-size: 1.4rem; }
+  .footer-tagline { font-size: .9rem; }
+  .footer-links { gap: 1rem; flex-wrap: wrap; justify-content: center; }
+  .footer-links a { font-size: .52rem; }
+  .footer-copy { font-size: .7rem; }
+
+  /* ── TOUCH TARGETS — ensure 44px minimum ── */
+  .dining-tab, .map-tab-btn { min-height: 44px; }
+  .nav-toggle { min-width: 44px; min-height: 44px; }
+
+  /* ── DISABLE HOVER TRANSFORMS ON TOUCH ── */
+  .dining-card:hover, .overview-card:hover, .tip-card:hover,
+  .day-card:hover, .festival-card:hover, .tier-card:hover,
+  .budget-note-card:hover, .ext-link:hover { transform: none; }
+  .dining-card:active, .overview-card:active, .tip-card:active { transform: scale(0.98); }
+}
+
+/* ── iPhone SE and very small screens (≤390px) ── */
+@media(max-width: 390px) {
+  .section-inner { padding: 2.5rem 1rem; }
+  .hero-title { font-size: 2.8rem; }
+  .weather-strip { grid-template-columns: repeat(2, 1fr); }
+  .hero-route { gap: .3rem; }
+  .tl-time { min-width: 36px; max-width: 36px; font-size: .48rem; }
+  .timeline::before { left: 38px; }
+  .tl-dot { left: 31px; }
+  .ext-link { font-size: .5rem; padding: .4rem .55rem; }
+  .flight-city .code { font-size: 1.4rem; }
+  .breakdown-val { display: block; margin-right: 0; margin-bottom: .15rem; }
+}
+
+/* ── Cursor: touch devices never get cursor:none ── */
+@media (hover: none) {
+  body { cursor: auto !important; }
+  #cursor-dot, #cursor-ring { display: none !important; }
+  a, button { cursor: pointer !important; }
+}
+</style>
+</head>
+<body>
+
+<!-- CURSOR -->
+<div id="cursor-dot"></div>
+<div id="cursor-ring"></div>
+
+<!-- MOBILE MENU OVERLAY (outside nav, highest z-index) -->
+<div id="mobileMenu" class="mobile-menu-overlay" aria-hidden="true">
+  <button class="mobile-menu-close" aria-label="Close menu" onclick="document.getElementById('mobileMenu').classList.remove('open'); document.getElementById('navToggle').classList.remove('active');">✕</button>
+  <a href="#overview" onclick="document.getElementById('mobileMenu').classList.remove('open'); document.getElementById('navToggle').classList.remove('active');">Overview</a>
+  <a href="#flight" onclick="document.getElementById('mobileMenu').classList.remove('open'); document.getElementById('navToggle').classList.remove('active');">Flight</a>
+  <a href="#barcelona" onclick="document.getElementById('mobileMenu').classList.remove('open'); document.getElementById('navToggle').classList.remove('active');">Barcelona</a>
+  <a href="#madrid" onclick="document.getElementById('mobileMenu').classList.remove('open'); document.getElementById('navToggle').classList.remove('active');">Madrid</a>
+  <a href="#dining" onclick="document.getElementById('mobileMenu').classList.remove('open'); document.getElementById('navToggle').classList.remove('active');">Dining</a>
+  <a href="#maps" onclick="document.getElementById('mobileMenu').classList.remove('open'); document.getElementById('navToggle').classList.remove('active');">Maps</a>
+  <a href="#tips" onclick="document.getElementById('mobileMenu').classList.remove('open'); document.getElementById('navToggle').classList.remove('active');">Tips</a>
+  <a href="#budget" onclick="document.getElementById('mobileMenu').classList.remove('open'); document.getElementById('navToggle').classList.remove('active');">Budget</a>
+</div>
+
+<!-- NAV -->
+<nav id="navbar">
+  <a href="#hero" class="nav-logo">España Dorada</a>
+  <ul class="nav-links" id="navLinks">
+    <li><a href="#overview">Overview</a></li>
+    <li><a href="#flight">Flight</a></li>
+    <li><a href="#barcelona">Barcelona</a></li>
+    <li><a href="#madrid">Madrid</a></li>
+    <li><a href="#dining">Dining</a></li>
+    <li><a href="#maps">Maps</a></li>
+    <li><a href="#tips">Tips</a></li>
+    <li><a href="#budget">Budget</a></li>
+  </ul>
+  <button class="nav-toggle" id="navToggle" aria-label="Open menu" onclick="document.getElementById('mobileMenu').classList.toggle('open'); this.classList.toggle('active');">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+
+<!-- HERO -->
+<section id="hero">
+  <div class="hero-canvas"></div>
+  <div class="hero-grid"></div>
+  <div class="hero-rings">
+    <div class="hero-ring"></div><div class="hero-ring"></div>
+    <div class="hero-ring"></div><div class="hero-ring"></div>
+  </div>
+  <div class="hero-content">
+    <div class="hero-tag">Early July 2026 · Peak Summer</div>
+    <h1 class="hero-title"><em>España</em><br>Dorada</h1>
+    <p class="hero-subtitle">Eight blazing summer days across the soul of Spain — morning markets before the heat peaks, golden-hour gardens above the Mediterranean, and long Castilian evenings that stretch past 10 PM.</p>
+    <div class="hero-route">
+      <div class="route-stop">
+        <span class="city">SFO</span>
+        <span class="days">San Francisco</span>
+      </div>
+      <div class="route-arrow">→</div>
+      <div class="route-stop">
+        <span class="city">Barcelona</span>
+        <span class="days">4 Nights</span>
+      </div>
+      <div class="route-arrow">→</div>
+      <div class="route-stop">
+        <span class="city">Lloret de Mar</span>
+        <span class="days">Day Trip</span>
+      </div>
+      <div class="route-arrow">→</div>
+      <div class="route-stop">
+        <span class="city">Madrid</span>
+        <span class="days">4 Nights</span>
+      </div>
+      <div class="route-arrow">→</div>
+      <div class="route-stop">
+        <span class="city">Segovia</span>
+        <span class="days">Final Day</span>
+      </div>
+    </div>
+  </div>
+  <div class="hero-scroll">
+    <span class="scroll-label">Scroll</span>
+    <div class="scroll-line"></div>
+  </div>
+</section>
+
+<!-- OVERVIEW -->
+<section id="overview">
+  <div class="section-inner">
+    <div class="section-header reveal">
+      <div class="section-eyebrow">Your Journey</div>
+      <h2 class="section-title">8 Days in <em>España</em></h2>
+      <p class="section-desc">A curated blend of Modernisme architecture, tapas culture, art masterpieces, and legendary gardens — perfectly timed for the height of Spanish summer.</p>
+    </div>
+
+    <!-- JULY WEATHER STRIP -->
+    <div class="weather-strip reveal">
+      <div class="weather-cell">
+        <div class="weather-icon">☀️</div>
+        <div class="weather-val">29°C</div>
+        <div class="weather-label">Barcelona Avg High</div>
+      </div>
+      <div class="weather-cell">
+        <div class="weather-icon">🌡️</div>
+        <div class="weather-val">34°C</div>
+        <div class="weather-label">Madrid Avg High</div>
+      </div>
+      <div class="weather-cell">
+        <div class="weather-icon">🌊</div>
+        <div class="weather-val">23°C</div>
+        <div class="weather-label">Sea Temperature</div>
+      </div>
+      <div class="weather-cell">
+        <div class="weather-icon">🌅</div>
+        <div class="weather-val">9:20 PM</div>
+        <div class="weather-label">Barcelona Sunset</div>
+      </div>
+      <div class="weather-cell">
+        <div class="weather-icon">💧</div>
+        <div class="weather-val">~2 days</div>
+        <div class="weather-label">Rain Days / Month</div>
+      </div>
+      <div class="weather-cell">
+        <div class="weather-icon">👥</div>
+        <div class="weather-val">Peak</div>
+        <div class="weather-label">Tourist Season</div>
+      </div>
+    </div>
+    <div class="overview-grid">
+      <div class="overview-card reveal reveal-delay-1">
+        <div class="card-number">01</div>
+        <div class="card-icon">✈️</div>
+        <div class="card-title">SFO → Barcelona (July)</div>
+        <div class="card-desc">July is peak season — book flights 3–4 months out. Iberia, Vueling and American via London are good options. Expect airfares to run higher than shoulder seasons. Arrive early morning to maximise your first day before the afternoon heat.</div>
+      </div>
+      <div class="overview-card reveal reveal-delay-2">
+        <div class="card-number">02</div>
+        <div class="card-icon">🏛️</div>
+        <div class="card-title">Barcelona — 4 Nights in July</div>
+        <div class="card-desc">24–30°C days with warm 20°C nights. Perfectly swimmable sea. Sagrada Família, Park Güell, Gothic Quarter, Casa Batlló, La Barceloneta — plus the Grec Festival running through all of July across 40+ city venues.</div>
+      </div>
+      <div class="overview-card reveal reveal-delay-3">
+        <div class="card-number">03</div>
+        <div class="card-icon">🌅</div>
+        <div class="card-title">Day Trip: Lloret de Mar</div>
+        <div class="card-desc">In July, Barcelona's sunset is around 9:20 PM — extraordinary. Arrive at the Jardins de Santa Clotilde by 7:30 PM and stay for a long Mediterranean twilight that turns the sea gold. The gardens close at 8 PM in summer.</div>
+      </div>
+      <div class="overview-card reveal reveal-delay-4">
+        <div class="card-number">04</div>
+        <div class="card-icon">🎨</div>
+        <div class="card-title">Madrid — 4 Nights in July</div>
+        <div class="card-desc">Madrid's hottest month at 32–35°C. Plan museums for 11AM–4PM (air-conditioned), outdoors for early mornings and evenings. Mad Cool Festival (July 8–11) brings Foo Fighters, Florence + The Machine, and Nick Cave to the city. Veranos de la Villa (42nd edition) fills the city with free outdoor performances all July.</div>
+      </div>
+    </div>
+
+    <!-- JULY FESTIVALS -->
+    <div class="section-header reveal" style="margin-top:5rem; margin-bottom:2rem;">
+      <div class="section-eyebrow">July Events</div>
+      <h2 class="section-title">Festivals <em>This Month</em></h2>
+      <p class="section-desc">July is Barcelona and Madrid's most alive month. Build these into your evenings — many are free or under €25.</p>
+    </div>
+    <div class="festival-row">
+      <div class="festival-card reveal">
+        <div class="festival-city-dot dot-bcn"></div>
+        <div>
+          <div class="festival-name">Festival Grec</div>
+          <div class="festival-dates">June 29 – July 31, 2026 · 50th Edition · Barcelona</div>
+          <div class="festival-desc">The milestone 50th anniversary edition of Barcelona's iconic summer arts festival — theatre, dance, music, and circus across 39 venues. The open-air Teatre Grec amphitheatre on Montjuïc remains the spectacular centrepiece for evening performances.</div>
+          <div class="links-row" style="margin-top:.75rem;"><a class="ext-link" href="https://www.barcelona.cat/grec/en/" target="_blank" rel="noopener">Programme & Tickets</a></div>
+        </div>
+      </div>
+      <div class="festival-card reveal reveal-delay-1">
+        <div class="festival-city-dot dot-bcn"></div>
+        <div>
+          <div class="festival-name">Festival Cruïlla</div>
+          <div class="festival-dates">July 8–11, 2026 · Parc del Fòrum, Barcelona</div>
+          <div class="festival-desc">Four days of live music by the sea with headliners Pixies, David Byrne, Halsey, Faithless, The Black Crowes, Two Door Cinema Club, and 50+ artists. Eco-friendly vibes, food trucks, comedy, dance, and art zones. Runs until 3AM nightly.</div>
+          <div class="links-row" style="margin-top:.75rem;"><a class="ext-link" href="https://www.cruillabarcelona.com/en/" target="_blank" rel="noopener">Festival Website & Tickets</a></div>
+        </div>
+      </div>
+      <div class="festival-card reveal reveal-delay-2">
+        <div class="festival-city-dot dot-bcn"></div>
+        <div>
+          <div class="festival-name">Brunch Electronik</div>
+          <div class="festival-dates">Sundays in Summer · Poble Espanyol, Barcelona</div>
+          <div class="festival-desc">The beloved Sunday electronic music sessions return to the Joan Brossa Gardens on Montjuïc — afternoon DJs, Mediterranean views, and a wonderfully relaxed crowd from 1PM onwards. A perfect low-key Sunday in the city. Note: the main Brunch Electronik Festival (Parc del Fòrum, Aug 7–9) falls after this trip.</div>
+          <div class="links-row" style="margin-top:.75rem;"><a class="ext-link" href="https://barcelona.brunchelectronik.com/en/" target="_blank" rel="noopener">Schedule & Tickets</a></div>
+        </div>
+      </div>
+      <div class="festival-card reveal reveal-delay-1">
+        <div class="festival-city-dot dot-mad"></div>
+        <div>
+          <div class="festival-name">Veranos de la Villa</div>
+          <div class="festival-dates">July – August 2026 · 42nd Edition · Madrid</div>
+          <div class="festival-desc">Madrid's beloved city-wide arts festival celebrating its 42nd edition — flamenco, jazz, opera, dance, circus, open-air cinema across 20+ venues throughout the city. Programme announced mid-to-late June 2026. Many events free. Check the official portal for the full schedule once released.</div>
+          <div class="links-row" style="margin-top:.75rem;"><a class="ext-link" href="https://www.veranosdelavilla.com/en" target="_blank" rel="noopener">Official Portal</a><a class="ext-link" href="https://www.esmadrid.com/en/whats-on/veranos-de-la-villa" target="_blank" rel="noopener">Tourism Madrid Info</a></div>
+        </div>
+      </div>
+      <div class="festival-card reveal reveal-delay-2">
+        <div class="festival-city-dot dot-mad"></div>
+        <div>
+          <div class="festival-name">Mad Cool Festival</div>
+          <div class="festival-dates">July 8–11, 2026 · 10th Anniversary · Iberdrola Music, Madrid</div>
+          <div class="festival-desc">The 10th anniversary edition is the biggest yet — Foo Fighters (Wed), Florence + The Machine &amp; Lorde (Thu), Twenty One Pilots &amp; Kings of Leon (Fri), Nick Cave &amp; The Bad Seeds &amp; Pulp (Sat). Also: Wolf Alice, Pixies, David Byrne, Halsey, Interpol, The War on Drugs, and 70+ artists total.</div>
+          <div class="links-row" style="margin-top:.75rem;"><a class="ext-link" href="https://www.madcoolfestival.es/en/noticia/2026-line-up" target="_blank" rel="noopener">2026 Lineup</a><a class="ext-link" href="https://www.madcoolfestival.es/en" target="_blank" rel="noopener">Official Website</a></div>
+        </div>
+      </div>
+      <div class="festival-card reveal reveal-delay-3">
+        <div class="festival-city-dot dot-mad"></div>
+        <div>
+          <div class="festival-name">Noches del Botánico</div>
+          <div class="festival-dates">June 5 – July 31, 2026 · 10th Edition · Real Jardín Botánico, Madrid</div>
+          <div class="festival-desc">The 10th anniversary of this intimate garden concert series at the Complutense University's Royal Botanical Garden. 2026 lineup includes Rick Astley, ZZ Top, Biffy Clyro, Diana Krall, Danny Elfman, Zaz, Alabama Shakes, and 50+ more across 54 nights. Tickets from €35.</div>
+          <div class="links-row" style="margin-top:.75rem;"><a class="ext-link" href="https://en.nochesdelbotanico.com/" target="_blank" rel="noopener">Official Website & Tickets</a></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+<section id="flight">
+  <div class="section-inner">
+    <div class="flight-content">
+      <div class="flight-info reveal">
+        <h2>Getting There from SFO in July</h2>
+        <p>July is peak season — <strong style="color:var(--gold-light)">book flights 3–4 months ahead</strong>. Iberia flies SFO→BCN via Madrid Barajas; British Airways/American go through Heathrow. Expect higher fares than spring. For your return, fly <strong style="color:var(--gold-light)">MAD → SFO</strong> direct with Iberia (~11 hrs). Aim for morning arrivals so you have a full day before peak afternoon heat.</p>
+        <br>
+        <p>Between cities, the <strong style="color:var(--gold-light)">Barcelona → Madrid high-speed AVE train</strong> (Renfe) takes just 2.5 hrs from Sants station — air-conditioned comfort beats the airport crush in July heat. Book 3+ weeks ahead for best prices.</p>
+        <div class="links-row" style="margin-top:1.5rem;">
+          <a class="ext-link" href="https://www.iberia.com/us/flights/san-francisco-barcelona/" target="_blank" rel="noopener">Search Iberia SFO→BCN</a>
+          <a class="ext-link" href="https://www.google.com/travel/flights/search?tfs=CBwQAhoeEgoyMDI1LTA1LTAxagcIARIDU0ZPcgcIARIDQkNO" target="_blank" rel="noopener">Google Flights SFO→BCN</a>
+          <a class="ext-link" href="https://www.renfe.com/es/en/viajeros/viajes-nacionales/ave" target="_blank" rel="noopener">Book AVE Train (Renfe)</a>
+          <a class="ext-link" href="https://www.google.com/travel/flights/search?tfs=CBwQAhoeEgoyMDI1LTA1LTA1agcIARIDTUFEcgcIARIDU0ZP" target="_blank" rel="noopener">Google Flights MAD→SFO</a>
+        </div>
+        <div class="season-alert info reveal" style="margin-top:1.5rem;">
+          <div class="season-alert-icon">🗓️</div>
+          <div class="season-alert-text"><strong>Renfe Booking Window:</strong> AVE tickets for July 2026 are generally released 60 days before travel — meaning <strong>early May 2026</strong> for most July dates. Set a calendar reminder for <strong>May 1, 2026</strong> to book the moment tickets drop and secure the best prices. Waiting until June can mean significantly higher fares.</div>
+        </div>
+      </div>
+      <div class="flight-visual reveal reveal-delay-2">
+        <div class="flight-city">
+          <div class="code">SFO</div>
+          <div class="name">San Francisco</div>
+        </div>
+        <div class="flight-path">
+          <div class="flight-line"></div>
+          <div class="flight-duration">~13–16 hrs</div>
+        </div>
+        <div class="flight-city">
+          <div class="code">BCN</div>
+          <div class="name">Barcelona</div>
+        </div>
+        <div style="width:1px; height:60px; background:var(--border); margin:0 .5rem;"></div>
+        <div class="flight-city">
+          <div class="code">AVE</div>
+          <div class="name">2.5 hrs</div>
+        </div>
+        <div style="width:1px; height:60px; background:var(--border); margin:0 .5rem;"></div>
+        <div class="flight-city">
+          <div class="code">MAD</div>
+          <div class="name">Madrid</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- BARCELONA ITINERARY -->
+<section id="barcelona">
+  <div class="section-inner">
+    <div class="section-header reveal">
+      <div class="section-eyebrow">Days 1–4</div>
+      <h2 class="section-title"><em>Barcelona</em></h2>
+      <p class="section-desc">Four days in the city of Gaudí in peak summer — mornings for architecture before 11AM, beach afternoons, long twilight evenings for unforgettable food. Sunset lands at 9:20 PM.</p>
+    </div>
+
+    <div class="season-alert reveal">
+      <div class="season-alert-icon">🌡️</div>
+      <div class="season-alert-text"><strong>July Heat Strategy in Barcelona:</strong> Plan all outdoor sightseeing before 11AM or after 5PM. The 1–5PM window is best spent inside air-conditioned museums or over a long Spanish lunch. Barcelona's sea breeze makes the heat more manageable than Madrid.</div>
+    </div>
+    <div class="season-alert info reveal reveal-delay-1">
+      <div class="season-alert-icon">🎟️</div>
+      <div class="season-alert-text"><strong>July Crowds Warning:</strong> Sagrada Família, Park Güell, and Casa Batlló are at absolute peak volume. Book the <strong>earliest morning slot available</strong> (9AM openings) — this beats both the crowds and the heat simultaneously. Expect lines everywhere to be much longer than usual.</div>
+    </div>
+
+    <div class="days-grid">
+
+      <!-- BCN DAY 1 -->
+      <div class="day-card reveal">
+        <div class="day-header">
+          <div class="day-num-block">
+            <div class="day-num">1</div>
+            <div class="day-label">Day One</div>
+          </div>
+          <div class="day-title-block">
+            <div class="day-badge badge-barcelona">Barcelona</div>
+            <h3 class="day-title-h3">Arrival & Eixample — Beat the Heat from Day One</h3>
+          </div>
+        </div>
+        <div class="day-body">
+          <div class="timeline">
+            <div class="tl-item">
+              <div class="tl-time">AM</div>
+              <div class="tl-dot">✈</div>
+              <div class="tl-content">
+                <div class="tl-place">Arrive Barcelona El Prat (BCN)</div>
+                <div class="tl-note">Clear customs, take the Aerobus (40 min, €6.75) or taxi to your Eixample hotel. Check in early if possible — hotel rooms are a crucial cool retreat in July. Try to arrive morning so you have a full day.</div>
+                <div class="tl-tags"><span class="tl-tag tip">Request early check-in when booking — July hotels are flexible for long stays</span></div>
+              </div>
+            </div>
+            <div class="tl-item">
+              <div class="tl-time">12:00</div>
+              <div class="tl-dot">☕</div>
+              <div class="tl-content">
+                <div class="tl-place">Brunch & Cake — First Meal</div>
+                <div class="tl-note">Combat jet lag with a beautiful brunch on Carrer d'Enric Granados — lavender lattes, corn waffles, and lush salads.</div>
+                <div class="tl-tags"><span class="tl-tag food">Brunch / Café</span><span class="tl-tag">Eixample</span></div>
+                <div class="links-row"><a class="ext-link" href="https://brunchandcake.com/enric-granados/" target="_blank" rel="noopener">Website</a><a class="ext-link" href="https://maps.google.com/?q=Brunch+%26+Cake+Carrer+d%27Enric+Granados+19+Barcelona" target="_blank" rel="noopener">Google Maps</a></div>
+              </div>
+            </div>
+            <div class="tl-item">
+              <div class="tl-time">14:30</div>
+              <div class="tl-dot">🏛</div>
+              <div class="tl-content">
+                <div class="tl-place">Passeig de Gràcia Walk</div>
+                <div class="tl-note">The golden hour stroll along this grand boulevard is sublime in July — the late afternoon light hits the façades beautifully. Admire Casa Batlló and Casa Milà exteriors. In July, Casa Batlló's Magic Nights rooftop experience runs until 11PM — an unmissable summer exclusive.</div>
+                <div class="tl-tags"><span class="tl-tag sight">Gaudí Architecture</span><span class="tl-tag tip">Magic Nights: July sunset rooftop experience</span></div>
+                <div class="links-row"><a class="ext-link" href="https://www.casabatllo.es/en/" target="_blank" rel="noopener">Casa Batlló Tickets</a><a class="ext-link" href="https://www.lapedrera.com/en/home" target="_blank" rel="noopener">La Pedrera Tickets</a></div>
+              </div>
+            </div>
+            <div class="tl-item">
+              <div class="tl-time">21:30</div>
+              <div class="tl-dot">🍽</div>
+              <div class="tl-content">
+                <div class="tl-place">Ciutat Comtal — Tapas Dinner</div>
+                <div class="tl-note">In July, dinner at 9:30PM is perfectly normal — even preferred by locals. Barcelona's beloved tapas bar on Rambla de Catalunya stays packed and lively. Order the patatas bravas, fig with prosciutto, bacalao with honey alioli, and gambas al ajillo. Dining this late means the evening air has finally cooled down.</div>
+                <div class="tl-tags"><span class="tl-tag food">Tapas / Spanish</span><span class="tl-tag tip">July tip: arrive 9:30PM for shorter wait than 8PM rush</span></div>
+                <div class="links-row"><a class="ext-link" href="https://www.laflautagroup.com/en" target="_blank" rel="noopener">Website</a><a class="ext-link" href="https://maps.google.com/?q=Ciutat+Comtal+Rambla+de+Catalunya+18+Barcelona" target="_blank" rel="noopener">Google Maps</a></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- BCN DAY 2 -->
+      <div class="day-card reveal reveal-delay-1">
+        <div class="day-header">
+          <div class="day-num-block">
+            <div class="day-num">2</div>
+            <div class="day-label">Day Two</div>
+          </div>
+          <div class="day-title-block">
+            <div class="day-badge badge-barcelona">Barcelona</div>
+            <h3 class="day-title-h3">Gaudí Pilgrimage — Early Morning Edition</h3>
+          </div>
+        </div>
+        <div class="day-body">
+          <div class="timeline">
+            <div class="tl-item">
+              <div class="tl-time">8:00</div>
+              <div class="tl-dot">🥐</div>
+              <div class="tl-content">
+                <div class="tl-place">Origo Bakery — Morning Pastries</div>
+                <div class="tl-note">Start the day at this beloved artisan bakery near Eixample. The Ham & Cheese Napolitana and cardamom rolls are legendary. Arrive early before they sell out.</div>
+                <div class="tl-tags"><span class="tl-tag food">Bakery / Coffee</span></div>
+                <div class="links-row"><a class="ext-link" href="https://www.origobakery.com/" target="_blank" rel="noopener">Website</a><a class="ext-link" href="https://maps.google.com/?q=Origo+Bakery+Ronda+de+Sant+Pau+67+Barcelona" target="_blank" rel="noopener">Google Maps</a></div>
+              </div>
+            </div>
+            <div class="tl-item">
+              <div class="tl-time">9:00</div>
+              <div class="tl-dot">⛪</div>
+              <div class="tl-content">
+                <div class="tl-place">Sagrada Família</div>
+                <div class="tl-note">Book the 9AM opening slot — in July this is essential to beat both the crowds and the rising heat. The stained glass interior is at its most spectacular in the morning when light floods in from the East façade. The Nativity Tower gives panoramic views before the summer haze sets in. Allow 2.5 hours.</div>
+                <div class="tl-tags"><span class="tl-tag sight">UNESCO Site</span><span class="tl-tag tip">July: Book 9AM slot — sells out weeks ahead</span></div>
+                <div class="links-row"><a class="ext-link" href="https://sagradafamilia.org/en/tickets-individuals" target="_blank" rel="noopener">Buy Tickets (Official)</a><a class="ext-link" href="https://maps.google.com/?q=Sagrada+Familia+Barcelona" target="_blank" rel="noopener">Google Maps</a></div>
+              </div>
+            </div>
+            <div class="tl-item">
+              <div class="tl-time">13:00</div>
+              <div class="tl-dot">🛒</div>
+              <div class="tl-content">
+                <div class="tl-place">Mercat de la Boqueria — Lunch</div>
+                <div class="tl-note">Wander Spain's most famous market on La Rambla. Graze on oysters, jamón ibérico, fresh fruit, and seafood at the counters. In July, arrive by 1PM — the market fills with heat and tourists by early afternoon. Closed Sundays. Perfect air-conditioned midday escape.</div>
+                <div class="tl-tags"><span class="tl-tag food">Market / Tapas</span><span class="tl-tag tip">Closed Sunday · July: Go before 1PM</span></div>
+                <div class="links-row"><a class="ext-link" href="https://www.boqueria.barcelona/en" target="_blank" rel="noopener">Official Website</a><a class="ext-link" href="https://maps.google.com/?q=Mercat+de+la+Boqueria+La+Rambla+91+Barcelona" target="_blank" rel="noopener">Google Maps</a></div>
+              </div>
+            </div>
+            <div class="tl-item">
+              <div class="tl-time">15:00</div>
+              <div class="tl-dot">😴</div>
+              <div class="tl-content">
+                <div class="tl-place">July Siesta — Hotel Rest</div>
+                <div class="tl-note">Peak heat window: 2–5PM. In July, this is not optional — it's the Spanish way. Return to the hotel, cool down, shower, and recharge. Spaniards do this. You'll enjoy the evening far more for it.</div>
+                <div class="tl-tags"><span class="tl-tag tip">July essential: embrace the siesta culture</span></div>
+              </div>
+            </div>
+            <div class="tl-item">
+              <div class="tl-time">17:30</div>
+              <div class="tl-dot">🌿</div>
+              <div class="tl-content">
+                <div class="tl-place">Park Güell — Late Afternoon Visit</div>
+                <div class="tl-note">In July, the 5:30PM slot is ideal — the worst heat has passed, the light turns golden, and the crowds thin somewhat from the midday peak. The hillside park catches every breeze Barcelona can offer. Sunset from the terrace facing the city is genuinely breathtaking in summer.</div>
+                <div class="tl-tags"><span class="tl-tag sight">Gaudí Park</span><span class="tl-tag tip">July: 5–7PM slot — cooler, better light</span></div>
+                <div class="links-row"><a class="ext-link" href="https://www.parkguell.barcelona/en/buy-tickets/" target="_blank" rel="noopener">Buy Tickets (Official)</a><a class="ext-link" href="https://maps.google.com/?q=Park+Guell+Barcelona" target="_blank" rel="noopener">Google Maps</a></div>
+              </div>
+            </div>
+            <div class="tl-item">
+              <div class="tl-time">22:00</div>
+              <div class="tl-dot">🍷</div>
+              <div class="tl-content">
+                <div class="tl-place">Mediamanga — Dinner</div>
+                <div class="tl-note">In July, a 10PM dinner reservation is entirely normal and pleasantly cool. A sophisticated Eixample gem with an open kitchen. Try the sea urchin rice, sardine pizza, and steak tartare. Reserve well ahead — Mediamanga is busy all summer. Closed Mon & Tue.</div>
+                <div class="tl-tags"><span class="tl-tag food">Fine Dining / Mediterranean</span><span class="tl-tag tip">July: 10PM reservation — cooler & local</span></div>
+                <div class="links-row"><a class="ext-link" href="https://www.mediamanga.es/" target="_blank" rel="noopener">Website</a><a class="ext-link" href="https://www.thefork.com/restaurant/mediamanga-r745498" target="_blank" rel="noopener">Reserve on TheFork</a><a class="ext-link" href="https://maps.google.com/?q=Mediamanga+Carrer+d%27Aribau+13+Barcelona" target="_blank" rel="noopener">Google Maps</a></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- BCN DAY 3 — LLORET DE MAR DAY TRIP -->
+      <div class="day-card reveal reveal-delay-2">
+        <div class="day-header">
+          <div class="day-num-block">
+            <div class="day-num">3</div>
+            <div class="day-label">Day Three</div>
+          </div>
+          <div class="day-title-block">
+            <div class="day-badge badge-daytrip">✦ Day Trip</div>
+            <h3 class="day-title-h3">Lloret de Mar — Jardins de Santa Clotilde at Sunset</h3>
+          </div>
+        </div>
+        <div class="day-body">
+          <div class="highlight-sunset">
+            <div class="highlight-title">✨ The July Golden Hour — 9:20 PM Sunset</div>
+            <div class="highlight-text">In early July, the Costa Brava enjoys one of the longest days of the year — sunset at approximately 9:20 PM with a full 40-minute golden hour beforehand. The Jardins de Santa Clotilde face due west over the Mediterranean. Arrive by 7:30 PM (check summer closing time on arrival — may extend to 8 PM in July), wander the terraced paths past marble nymphs, and settle at the belvedere as the sea turns molten gold. One of the most beautiful sunset experiences in all of Spain. Admission: €6.</div>
+          </div>
+          <div class="timeline">
+            <div class="tl-item">
+              <div class="tl-time">9:00</div>
+              <div class="tl-dot">🚗</div>
+              <div class="tl-content">
+                <div class="tl-place">Depart Barcelona → Lloret de Mar</div>
+                <div class="tl-note">1 hour by car via AP-7 toll road. Alternatively, take a SARFA bus from Estació del Nord (~1.5 hrs). Rent a car for flexibility on the Costa Brava coast road.</div>
+                <div class="tl-tags"><span class="tl-tag tip">Car rental recommended for scenic coast road</span></div>
+              </div>
+            </div>
+            <div class="tl-item">
+              <div class="tl-time">11:00</div>
+              <div class="tl-dot">🏖</div>
+              <div class="tl-content">
+                <div class="tl-place">Lloret de Mar Town & Beach</div>
+                <div class="tl-note">July is the absolute best month to swim in Lloret — sea temperature reaches 23°C, crystal clear. Explore the old town, walk the promenade, and spend the hottest part of the day (noon–3PM) in the water. The castle of Sant Joan is a short uphill walk best saved for the cooler late-afternoon.</div>
+                <div class="tl-tags"><span class="tl-tag sight">Beach / Town</span><span class="tl-tag special">Sea: 23°C — perfect swimming</span></div>
+              </div>
+            </div>
+            <div class="tl-item">
+              <div class="tl-time">13:30</div>
+              <div class="tl-dot">🍤</div>
+              <div class="tl-content">
+                <div class="tl-place">Lunch — Local Seafood</div>
+                <div class="tl-note">In July, lunch in a shaded beachfront restaurant during the hottest hours (1–3PM) is the perfect strategy. Try fresh grilled dorada, fideuà, or paella — the Costa Brava seafood in summer is exceptional. A long, leisurely lunch keeps you cool while the midday heat peaks outside.</div>
+                <div class="tl-tags"><span class="tl-tag food">Seafood / Costa Brava</span><span class="tl-tag tip">July: linger over lunch 1–3PM to beat the heat</span></div>
+              </div>
+            </div>
+            <div class="tl-item">
+              <div class="tl-time">16:30</div>
+              <div class="tl-dot">🌸</div>
+              <div class="tl-content">
+                <div class="tl-place">Jardins de Santa Clotilde — Sunset Visit</div>
+                <div class="tl-note">Arrive as the afternoon heat finally softens into a golden evening. Wander the terraced paths, past marble nymphs and geometric hedgerows, down to the belvedere overlooking the Mediterranean. In July, aim to stay until 8:30–9PM to experience the long twilight and full sunset at ~9:20 PM.</div>
+                <div class="tl-tags"><span class="tl-tag special">Must-Do Moment</span><span class="tl-tag tip">July sunset ~9:20PM · Arrive by 7:30PM</span></div>
+                <div class="links-row"><a class="ext-link" href="https://www.lloretdemar.org/en/garden-of-santa-clotilde" target="_blank" rel="noopener">Official Info</a><a class="ext-link" href="https://maps.google.com/?q=Jardins+de+Santa+Clotilde+Lloret+de+Mar" target="_blank" rel="noopener">Google Maps</a></div>
+              </div>
+            </div>
+            <div class="tl-item">
+              <div class="tl-time">20:30</div>
+              <div class="tl-dot">🫒</div>
+              <div class="tl-content">
+                <div class="tl-place">Sucursal Aceitera — Late Dinner Back in Barcelona</div>
+                <div class="tl-note">Return to Barcelona (~1 hr drive) and dine at this beloved neighbourhood spot in Sant Antoni. Famous for its hassle-back bravas, croquettes, and great value. A local favourite.</div>
+                <div class="tl-tags"><span class="tl-tag food">Catalan Tapas</span><span class="tl-tag">Sant Antoni</span></div>
+                <div class="links-row"><a class="ext-link" href="https://www.instagram.com/sucursalaceitera/" target="_blank" rel="noopener">Instagram</a><a class="ext-link" href="https://maps.google.com/?q=Sucursal+Aceitera+Carrer+del+Comte+Borrell+36+Barcelona" target="_blank" rel="noopener">Google Maps</a></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- BCN DAY 4 -->
+      <div class="day-card reveal reveal-delay-3">
+        <div class="day-header">
+          <div class="day-num-block">
+            <div class="day-num">4</div>
+            <div class="day-label">Day Four</div>
+          </div>
+          <div class="day-title-block">
+            <div class="day-badge badge-barcelona">Barcelona</div>
+            <h3 class="day-title-h3">Gothic Quarter, Barceloneta & Summer Send-Off</h3>
+          </div>
+        </div>
+        <div class="day-body">
+          <div class="timeline">
+            <div class="tl-item">
+              <div class="tl-time">9:30</div>
+              <div class="tl-dot">☕</div>
+              <div class="tl-content">
+                <div class="tl-place">The Egg Lab — Final Barcelona Breakfast</div>
+                <div class="tl-note">A completely different vibe from Brunch & Cake — creative and a little adventurous. This beloved Sant Antoni spot is rated 4.6 stars and earns it. The Korean Chicken Eggs Benedict (seasoned chicken, hollandaise, a touch of heat) is one of the most talked-about brunch dishes in the city. Shakshuka, fresh juices, and exceptional matcha lattes round out the menu. Arrive at 9:30AM for a smooth seat before the weekend rush.</div>
+                <div class="tl-tags"><span class="tl-tag food">Brunch / Creative</span><span class="tl-tag">Sant Antoni</span><span class="tl-tag tip">July: arrive early — fills fast</span></div>
+                <div class="links-row"><a class="ext-link" href="https://www.instagram.com/theegglab.barcelona/" target="_blank" rel="noopener">Instagram</a><a class="ext-link" href="https://maps.google.com/?q=The+Egg+Lab+Carrer+de+Sepulveda+80+Barcelona" target="_blank" rel="noopener">Google Maps</a></div>
+              </div>
+            </div>
+            <div class="tl-item">
+              <div class="tl-time">11:00</div>
+              <div class="tl-dot">🏰</div>
+              <div class="tl-content">
+                <div class="tl-place">Gothic Quarter (Barri Gòtic)</div>
+                <div class="tl-note">Lose yourself in Barcelona's medieval heart — the Roman city walls, Barcelona Cathedral, Plaça Reial, and El Call (medieval Jewish quarter). Allow 2 hours to wander without a map.</div>
+                <div class="tl-tags"><span class="tl-tag sight">Medieval Quarter</span></div>
+                <div class="links-row"><a class="ext-link" href="https://www.barcelonaturisme.com/wv3/en/page/338/gothic-quarter.html" target="_blank" rel="noopener">Visitor Info</a><a class="ext-link" href="https://maps.google.com/?q=Gothic+Quarter+Barcelona" target="_blank" rel="noopener">Google Maps</a></div>
+              </div>
+            </div>
+            <div class="tl-item">
+              <div class="tl-time">14:00</div>
+              <div class="tl-dot">🌊</div>
+              <div class="tl-content">
+                <div class="tl-place">Barceloneta Beach</div>
+                <div class="tl-note">July is prime Barceloneta season — the Mediterranean hits 23°C and the beach is electric with life. Arrive by 10AM to claim a spot before it fills. The 1–3PM hours are best spent in the water. Beachside chiringuitos serve cold cava and fresh seafood. The Frank Gehry Fish sculpture marks the northern end of the boardwalk.</div>
+                <div class="tl-tags"><span class="tl-tag sight">Beach / Waterfront</span><span class="tl-tag special">July: 23°C sea — peak beach season</span></div>
+                <div class="links-row"><a class="ext-link" href="https://maps.google.com/?q=Barceloneta+Beach+Barcelona" target="_blank" rel="noopener">Google Maps</a></div>
+              </div>
+            </div>
+            <div class="tl-item">
+              <div class="tl-time">21:30</div>
+              <div class="tl-dot">🍽</div>
+              <div class="tl-content">
+                <div class="tl-place">Maleducat — Farewell Barcelona Dinner</div>
+                <div class="tl-note">A celebrated Sant Antoni restaurant reinventing the Catalan "casa de menjars" tradition — hearty, soulful cooking with precision and creativity. The rostit roll with plums and pine nuts, prawn tartare, croquettes, and crunchy rice with Palamós prawns are all exceptional. The €49 tasting menu is one of the best-value fine-dining experiences in Barcelona. At 9:30PM in July the terrace air has finally cooled — a perfect lingering last dinner before the AVE to Madrid. Closed Sundays — plan accordingly.</div>
+                <div class="tl-tags"><span class="tl-tag food">Creative Catalan</span><span class="tl-tag tip">July: reserve 2+ weeks ahead · closed Sunday</span></div>
+                <div class="links-row"><a class="ext-link" href="https://www.instagram.com/maleducat_restaurant/" target="_blank" rel="noopener">Instagram</a><a class="ext-link" href="https://www.thefork.es/restaurante/maleducat-r648082" target="_blank" rel="noopener">Reserve on TheFork</a><a class="ext-link" href="https://maps.google.com/?q=Maleducat+Carrer+de+Manso+54+Barcelona" target="_blank" rel="noopener">Google Maps</a></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- end BCN days-grid -->
+  </div>
+</section>
+
+<!-- MADRID ITINERARY -->
+<section id="madrid">
+  <div class="section-inner">
+    <div class="section-header reveal">
+      <div class="section-eyebrow">Days 5–8</div>
+      <h2 class="section-title"><em>Madrid</em></h2>
+      <p class="section-desc">Madrid in July is intense — 32–36°C dry Castilian heat, but extraordinarily alive. Mornings for culture, afternoons for long lunches and museums, evenings stretching beautifully past 10PM. Veranos de la Villa fills parks and plazas with free performances.</p>
+    </div>
+
+    <div class="season-alert reveal">
+      <div class="season-alert-icon">☀️</div>
+      <div class="season-alert-text"><strong>Madrid July Heat Warning:</strong> Madrid sits on a high plateau at 650m with dry heat regularly hitting 35–37°C in July — significantly hotter than Barcelona. Avoid any outdoor activity between noon and 5PM. The Prado, Royal Palace, and Thyssen are perfectly air-conditioned and ideal for midday. Carry a 1-litre water bottle everywhere.</div>
+    </div>
+    <div class="season-alert good reveal reveal-delay-1">
+      <div class="season-alert-icon">🌙</div>
+      <div class="season-alert-text"><strong>Madrid's Summer Upside:</strong> Madrid's evening culture in July is unmatched in Europe. Dinner at 10PM, concerts until midnight, terraza bars open until 2AM. Mad Cool Festival (July 8–11, 10th anniversary) brings Foo Fighters, Florence + The Machine, Nick Cave, and 70+ artists to the city. Veranos de la Villa fills plazas with free performances all month. <strong>The best of Madrid happens after 8PM</strong> — embrace the rhythm completely.</div>
+    </div>
+
+    <div class="days-grid">
+
+      <!-- MAD DAY 5 -->
+      <div class="day-card reveal">
+        <div class="day-header">
+          <div class="day-num-block">
+            <div class="day-num">5</div>
+            <div class="day-label">Day Five</div>
+          </div>
+          <div class="day-title-block">
+            <div class="day-badge badge-madrid">Madrid</div>
+            <h3 class="day-title-h3">Arrival, Art & the July Night City</h3>
+          </div>
+        </div>
+        <div class="day-body">
+          <div class="timeline">
+            <div class="tl-item">
+              <div class="tl-time">8:30</div>
+              <div class="tl-dot">🚄</div>
+              <div class="tl-content">
+                <div class="tl-place">AVE Train: Barcelona Sants → Madrid Atocha</div>
+                <div class="tl-note">2 hrs 30 min on the high-speed Renfe AVE. Book in advance for ~€25–60. Comfortable, scenic, and infinitely better than flying. Arrive at the magnificent Atocha station with its indoor tropical garden.</div>
+                <div class="tl-tags"><span class="tl-tag tip">⚠️ July tickets release ~60 days out — set reminder for May 2026</span></div>
+                <div class="links-row"><a class="ext-link" href="https://www.renfe.com/es/en" target="_blank" rel="noopener">Book on Renfe</a><a class="ext-link" href="https://maps.google.com/?q=Barcelona+Sants+Station" target="_blank" rel="noopener">Barcelona Sants Station</a></div>
+              </div>
+            </div>
+            <div class="tl-item">
+              <div class="tl-time">9:00</div>
+              <div class="tl-dot">🍫</div>
+              <div class="tl-content">
+                <div class="tl-place">Chocolatería San Ginés</div>
+                <div class="tl-note">The legendary 1894 churrerría hidden in a narrow passageway near Plaza Mayor. Open 24/7 — in July, the classic move is arriving at 9AM before the heat builds. Order churros con chocolate — the thick hot chocolate is pure velvet even in summer. A Madrid rite of passage at any temperature.</div>
+                <div class="tl-tags"><span class="tl-tag food">Churros / Historic Café</span><span class="tl-tag tip">July: go at 9AM before peak heat</span></div>
+                <div class="links-row"><a class="ext-link" href="https://www.chocolateriasangines.com/" target="_blank" rel="noopener">Official Website</a><a class="ext-link" href="https://maps.google.com/?q=Chocolateria+San+Gines+Pasadizo+de+San+Gines+5+Madrid" target="_blank" rel="noopener">Google Maps</a></div>
+              </div>
+            </div>
+            <div class="tl-item">
+              <div class="tl-time">10:30</div>
+              <div class="tl-dot">🎨</div>
+              <div class="tl-content">
+                <div class="tl-place">Museo Nacional del Prado</div>
+                <div class="tl-note">The Prado is one of Madrid's best midday escapes — magnificently air-conditioned while the city blazes outside. Velázquez's Las Meninas, Goya's Black Paintings, Bosch's Garden of Earthly Delights. Allow 3 hours minimum. In July, weekday free admission after 6PM is excellent value but very crowded — the 10AM slot gives you the galleries at their quietest.</div>
+                <div class="tl-tags"><span class="tl-tag sight">World-Class Museum</span><span class="tl-tag tip">July: 10AM opening beats heat & crowds</span></div>
+                <div class="links-row"><a class="ext-link" href="https://www.museodelprado.es/en/visit-the-prado/buy-tickets" target="_blank" rel="noopener">Buy Tickets (Official)</a><a class="ext-link" href="https://maps.google.com/?q=Museo+del+Prado+Madrid" target="_blank" rel="noopener">Google Maps</a></div>
+              </div>
+            </div>
+            <div class="tl-item">
+              <div class="tl-time">15:00</div>
+              <div class="tl-dot">🌳</div>
+              <div class="tl-content">
+                <div class="tl-place">El Retiro Park</div>
+                <div class="tl-note">In July, visit El Retiro after 6PM when the temperature drops to a bearable 28°C and the park fills with Madrid locals. The Crystal Palace hosts contemporary art exhibitions in summer. Rowboats on the lake at dusk are magical — the park doesn't close until 10PM, making it a perfect pre-dinner escape.</div>
+                <div class="tl-tags"><span class="tl-tag sight">UNESCO Park</span><span class="tl-tag tip">July: visit after 6PM — cooler & livelier</span></div>
+                <div class="links-row"><a class="ext-link" href="https://www.esmadrid.com/en/tourist-information/el-retiro-park" target="_blank" rel="noopener">Visitor Info</a><a class="ext-link" href="https://maps.google.com/?q=Parque+del+Retiro+Madrid" target="_blank" rel="noopener">Google Maps</a></div>
+              </div>
+            </div>
+            <div class="tl-item">
+              <div class="tl-time">22:00</div>
+              <div class="tl-dot">🍷</div>
+              <div class="tl-content">
+                <div class="tl-place">Vinoteca Moratin — Dinner</div>
+                <div class="tl-note">A 10PM dinner reservation in July Madrid is perfectly timed — the air has finally cooled and the city is fully alive. This Michelin Bib Gourmand wine bar near the Prado is at its best on a warm summer night. The tartare, seasonal fish, and wine pairings are world-class. Book weeks ahead for July.</div>
+                <div class="tl-tags"><span class="tl-tag food">Michelin / Wine Bar</span><span class="tl-tag tip">July: 10PM dinner — the authentic Madrid rhythm</span></div>
+                <div class="links-row"><a class="ext-link" href="https://www.vinotecamoratin.com/" target="_blank" rel="noopener">Website</a><a class="ext-link" href="https://www.thefork.es/restaurante/moratin-r748905" target="_blank" rel="noopener">Reserve on TheFork</a><a class="ext-link" href="https://maps.google.com/?q=Moratin+Calle+de+Moratin+36+Madrid" target="_blank" rel="noopener">Google Maps</a></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MAD DAY 6 -->
+      <div class="day-card reveal reveal-delay-1">
+        <div class="day-header">
+          <div class="day-num-block">
+            <div class="day-num">6</div>
+            <div class="day-label">Day Six</div>
+          </div>
+          <div class="day-title-block">
+            <div class="day-badge badge-madrid">Madrid</div>
+            <h3 class="day-title-h3">Royal Madrid & La Latina</h3>
+          </div>
+        </div>
+        <div class="day-body">
+          <div class="timeline">
+            <div class="tl-item">
+              <div class="tl-time">9:00</div>
+              <div class="tl-dot">☕</div>
+              <div class="tl-content">
+                <div class="tl-place">The Fix — Specialty Coffee</div>
+                <div class="tl-note">A calm, craft coffee sanctuary near Moncloa. Outstanding V60, cappuccinos, and breakfast — the bacon and fresh yogurt are exceptional. A quiet start before the grand palace.</div>
+                <div class="tl-tags"><span class="tl-tag food">Specialty Coffee / Brunch</span></div>
+                <div class="links-row"><a class="ext-link" href="https://www.instagram.com/thefixmadrid/" target="_blank" rel="noopener">Instagram</a><a class="ext-link" href="https://maps.google.com/?q=The+Fix+Cafe+Calle+de+Luisa+Fernanda+15+Madrid" target="_blank" rel="noopener">Google Maps</a></div>
+              </div>
+            </div>
+            <div class="tl-item">
+              <div class="tl-time">10:00</div>
+              <div class="tl-dot">👑</div>
+              <div class="tl-content">
+                <div class="tl-place">Royal Palace of Madrid (Palacio Real)</div>
+                <div class="tl-note">Book the 10AM opening slot in July — the Palace is gloriously air-conditioned while the city heats up outside. Europe's largest royal palace by floor area: 3,418 rooms, Tiepolo frescoes, extraordinary armory, and the original Stradivarius quartet. Allow 2.5 hours. The changing of the guard happens on the first Wednesday of the month at noon.</div>
+                <div class="tl-tags"><span class="tl-tag sight">Royal Palace</span><span class="tl-tag tip">July: 10AM opening — cool inside while streets heat up</span></div>
+                <div class="links-row"><a class="ext-link" href="https://www.patrimonionacional.es/en/real-sitio/palacio-real-de-madrid" target="_blank" rel="noopener">Buy Tickets (Official)</a><a class="ext-link" href="https://maps.google.com/?q=Royal+Palace+of+Madrid" target="_blank" rel="noopener">Google Maps</a></div>
+              </div>
+            </div>
+            <div class="tl-item">
+              <div class="tl-time">13:30</div>
+              <div class="tl-dot">🏛</div>
+              <div class="tl-content">
+                <div class="tl-place">Plaza Mayor & La Latina</div>
+                <div class="tl-note">In July, Plaza Mayor at 7–9PM is a magical experience — the golden light on the arcaded buildings, street performers, and terrace cafés all buzzing. Head south into La Latina for tapas: Calle Cava Baja is at its best on warm summer evenings. The Sunday Rastro flea market fills the barrio until 3PM.</div>
+                <div class="tl-tags"><span class="tl-tag sight">Historic Plaza</span><span class="tl-tag tip">July: evening terraza is the main event</span></div>
+                <div class="links-row"><a class="ext-link" href="https://maps.google.com/?q=Plaza+Mayor+Madrid" target="_blank" rel="noopener">Google Maps</a></div>
+              </div>
+            </div>
+            <div class="tl-item">
+              <div class="tl-time">15:30</div>
+              <div class="tl-dot">🍦</div>
+              <div class="tl-content">
+                <div class="tl-place">Eccolo Gelato</div>
+                <div class="tl-note">Arguably Madrid's finest gelato — handmade from raw ingredients. The pistachio, chocolate mint, and Greek (gelato, honey, walnuts) are otherworldly. Open 4PM–1AM — a perfect late-afternoon treat.</div>
+                <div class="tl-tags"><span class="tl-tag food">Artisan Gelato</span></div>
+                <div class="links-row"><a class="ext-link" href="https://www.instagram.com/eccologelato/" target="_blank" rel="noopener">Instagram</a><a class="ext-link" href="https://maps.google.com/?q=Eccolo+Gelato+Calle+de+la+Cruz+25+Madrid" target="_blank" rel="noopener">Google Maps</a></div>
+              </div>
+            </div>
+            <div class="tl-item">
+              <div class="tl-time">22:00</div>
+              <div class="tl-dot">🍽</div>
+              <div class="tl-content">
+                <div class="tl-place">Astor Gastroplace — Dinner</div>
+                <div class="tl-note">A hidden gem in La Latina with a near-perfect 4.9 rating. At 10PM in July, La Latina is fully alive and the restaurant is at its most vibrant. The pork rib, scallops in shell, and risotto are transcendent. The barman's wine pairing is superb. Very popular in summer — reserve well ahead. Closed Wed–Thu.</div>
+                <div class="tl-tags"><span class="tl-tag food">Fine Dining / Mediterranean</span><span class="tl-tag tip">July: 10PM dinner — La Latina at its best</span></div>
+                <div class="links-row"><a class="ext-link" href="https://www.instagram.com/astor.gastroplace/" target="_blank" rel="noopener">Instagram</a><a class="ext-link" href="https://www.thefork.es/restaurante/astor-gastro-place-r779025" target="_blank" rel="noopener">Reserve on TheFork</a><a class="ext-link" href="https://maps.google.com/?q=Astor+Gastroplace+Calle+del+Almendro+9+Madrid" target="_blank" rel="noopener">Google Maps</a></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MAD DAY 7 -->
+      <div class="day-card reveal reveal-delay-2">
+        <div class="day-header">
+          <div class="day-num-block">
+            <div class="day-num">7</div>
+            <div class="day-label">Day Seven</div>
+          </div>
+          <div class="day-title-block">
+            <div class="day-badge badge-madrid">Madrid</div>
+            <h3 class="day-title-h3">Neighbourhoods, Museums & Veranos de la Villa</h3>
+          </div>
+        </div>
+        <div class="day-body">
+          <div class="timeline">
+            <div class="tl-item">
+              <div class="tl-time">10:00</div>
+              <div class="tl-dot">🛍</div>
+              <div class="tl-content">
+                <div class="tl-place">Malasaña & Chueca Exploration</div>
+                <div class="tl-note">Start your morning in Malasaña before 11AM — explore vintage shops, street art, and independent cafés while the streets are still cool. Chueca's colourful terraces are perfect for a 10AM café con leche. In July both neighbourhoods are vibrant all day, but the real magic is in the evening — return after 8PM for bars and terrazas buzzing with madrileños.</div>
+                <div class="tl-tags"><span class="tl-tag sight">Neighbourhoods</span><span class="tl-tag tip">July: explore before 11AM and again after 8PM</span></div>
+              </div>
+            </div>
+            <div class="tl-item">
+              <div class="tl-time">14:00</div>
+              <div class="tl-dot">🌿</div>
+              <div class="tl-content">
+                <div class="tl-place">Algarabía — Lunch</div>
+                <div class="tl-note">A hidden gem run by two sisters serving Rioja-style cuisine. Ring the doorbell to enter this intimate treasure. The croquettes, borage, and oxtail stew are extraordinary. In July, a 2PM lunch reservation means you step out of the heat into one of Madrid's most soulful, personal dining rooms. Reserve at least 2 weeks ahead in summer.</div>
+                <div class="tl-tags"><span class="tl-tag food">Regional Spanish / Rioja</span><span class="tl-tag tip">July: 2PM lunch — cool room, soulful cooking</span></div>
+                <div class="links-row"><a class="ext-link" href="https://maps.google.com/?q=Restaurante+Algarabia+Calle+de+la+Union+8+Madrid" target="_blank" rel="noopener">Google Maps</a><a class="ext-link" href="https://www.thefork.es/restaurante/algarabia-r802869" target="_blank" rel="noopener">Reserve on TheFork</a></div>
+              </div>
+            </div>
+            <div class="tl-item">
+              <div class="tl-time">17:00</div>
+              <div class="tl-dot">🏛</div>
+              <div class="tl-content">
+                <div class="tl-place">Reina Sofía or Thyssen-Bornemisza</div>
+                <div class="tl-note">The ideal July midday activity — both museums are superbly air-conditioned while temperatures peak outside. The Reina Sofía houses Picasso's Guernica plus the best collection of 20th-century Spanish art in the world. The Thyssen bridges Old Masters to Modernism. Check for special summer evening exhibitions at both — often open late in July.</div>
+                <div class="tl-tags"><span class="tl-tag sight">World-Class Museums</span><span class="tl-tag tip">July: perfect midday heat escape</span></div>
+                <div class="links-row"><a class="ext-link" href="https://www.museoreinasofia.es/en" target="_blank" rel="noopener">Reina Sofía</a><a class="ext-link" href="https://www.museothyssen.org/en" target="_blank" rel="noopener">Thyssen Museum</a></div>
+              </div>
+            </div>
+            <div class="tl-item">
+              <div class="tl-time">19:00</div>
+              <div class="tl-dot">🎶</div>
+              <div class="tl-content">
+                <div class="tl-place">Veranos de la Villa — Evening (Optional)</div>
+                <div class="tl-note">Check the Veranos de la Villa 2026 programme (42nd edition — full schedule released mid-June). July evenings regularly feature free or low-cost performances at outdoor venues — flamenco in historic courtyards, jazz at Conde Duque, open-air cinema. A perfect pre-dinner hour as the city cools after 7PM.</div>
+                <div class="tl-tags"><span class="tl-tag special">July Festival</span><span class="tl-tag tip">Many events free — programme out mid-June 2026</span></div>
+                <div class="links-row"><a class="ext-link" href="https://www.veranosdelavilla.com/en" target="_blank" rel="noopener">Official Portal</a></div>
+              </div>
+            </div>
+            <div class="tl-item">
+              <div class="tl-time">22:00</div>
+              <div class="tl-dot">🥩</div>
+              <div class="tl-content">
+                <div class="tl-place">Restaurante Clos — Dinner</div>
+                <div class="tl-note">Michelin-starred celebration dinner in Chamberí. The tasting menu concept of "having a party" is perfectly in tune with Madrid's summer energy. Wave after wave of creative, technically brilliant dishes with a playlist that keeps the room buzzing. Book months ahead for July — this is one of Madrid's most sought-after summer tables.</div>
+                <div class="tl-tags"><span class="tl-tag food">Michelin Star / Fine Dining</span><span class="tl-tag tip">July: book 2–3 months ahead — in high demand</span></div>
+                <div class="links-row"><a class="ext-link" href="https://www.restauranteclos.com/" target="_blank" rel="noopener">Official Website</a><a class="ext-link" href="https://www.thefork.es/restaurante/clos-r781099" target="_blank" rel="noopener">Reserve on TheFork</a><a class="ext-link" href="https://maps.google.com/?q=Restaurante+Clos+Calle+Raimundo+Fernandez+Villaverde+28+Madrid" target="_blank" rel="noopener">Google Maps</a></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MAD DAY 8 — SEGOVIA -->
+      <div class="day-card reveal reveal-delay-3">
+        <div class="day-header">
+          <div class="day-num-block">
+            <div class="day-num">8</div>
+            <div class="day-label">Final Day</div>
+          </div>
+          <div class="day-title-block">
+            <div class="day-badge badge-segovia">✦ Day Trip — Segovia</div>
+            <h3 class="day-title-h3">Ancient Segovia & Asador Maribel</h3>
+          </div>
+        </div>
+        <div class="day-body">
+          <div class="highlight-sunset" style="--left-bar: var(--terracotta);">
+            <div class="highlight-title">🍽 The Grand Finale — July in Segovia</div>
+            <div class="highlight-text">Segovia sits at 1,000m altitude on the Castilian plateau — noticeably cooler than Madrid in July, with drier air and a breeze off the sierra. Asador Maribel's air-conditioned dining room is the perfect refuge for a long, celebratory 2PM summer lunch. The cochinillo ceremony, crispy-skinned and fall-apart tender, Ponche Segoviano cake, and complimentary digestifs from a staff that feels like family. Reserve 2–3 weeks ahead for July peak season.</div>
+          </div>
+          <div class="timeline">
+            <div class="tl-item">
+              <div class="tl-time">8:30</div>
+              <div class="tl-dot">🚄</div>
+              <div class="tl-content">
+                <div class="tl-place">Train: Madrid Chamartín → Segovia</div>
+                <div class="tl-note">The Avant high-speed train takes just 27 minutes (€12 each way). Departs from Chamartín or Atocha. From Segovia's train station, take Bus 11 direct to the Aqueduct (€2.25 / 15 min).</div>
+                <div class="tl-tags"><span class="tl-tag tip">⚠️ July tickets release ~60 days out — set reminder for May 2026</span></div>
+                <div class="links-row"><a class="ext-link" href="https://www.renfe.com/es/en" target="_blank" rel="noopener">Book on Renfe</a></div>
+              </div>
+            </div>
+            <div class="tl-item">
+              <div class="tl-time">9:30</div>
+              <div class="tl-dot">🏛</div>
+              <div class="tl-content">
+                <div class="tl-place">Roman Aqueduct of Segovia</div>
+                <div class="tl-note">Visit the Aqueduct first thing — at 9:30AM in July the light is superb and temperatures are still bearable (it heats up quickly). Climb the steps on the right of Plaza Azoguejo for the elevated view. Built in the 1st century AD without mortar — 167 arches, 28m tall. Plan to be done before 11AM when the stone plaza starts radiating heat.</div>
+                <div class="tl-tags"><span class="tl-tag sight">Roman Monument</span><span class="tl-tag tip">July: visit before 11AM — open plaza heats up fast</span></div>
+                <div class="links-row"><a class="ext-link" href="https://www.turismodesegovia.com/en/what-to-see/the-aqueduct/" target="_blank" rel="noopener">Visitor Info</a><a class="ext-link" href="https://maps.google.com/?q=Segovia+Aqueduct+Plaza+Azoguejo+Segovia" target="_blank" rel="noopener">Google Maps</a></div>
+              </div>
+            </div>
+            <div class="tl-item">
+              <div class="tl-time">11:00</div>
+              <div class="tl-dot">🏰</div>
+              <div class="tl-content">
+                <div class="tl-place">Alcázar de Segovia & Old Town</div>
+                <div class="tl-note">The Alcázar's thick stone walls keep the interior cool even in July — an ideal 11AM–1PM visit. Walk the medieval streets while they're still shaded, visit the Cathedral of Segovia, and make your way toward Asador Maribel as the clock approaches 2PM. The old town's narrow lanes provide far more shade than Madrid's broad boulevards.</div>
+                <div class="tl-tags"><span class="tl-tag sight">Medieval Castle</span><span class="tl-tag tip">July: cool stone interiors — perfect midday shelter</span></div>
+                <div class="links-row"><a class="ext-link" href="https://www.alcazardesegovia.com/en/" target="_blank" rel="noopener">Alcázar Tickets</a><a class="ext-link" href="https://maps.google.com/?q=Alcazar+de+Segovia" target="_blank" rel="noopener">Google Maps</a></div>
+              </div>
+            </div>
+            <div class="tl-item">
+              <div class="tl-time">14:00</div>
+              <div class="tl-dot">🐷</div>
+              <div class="tl-content">
+                <div class="tl-place">Asador Maribel — The Grand Finale Lunch</div>
+                <div class="tl-note">A 2PM summer lunch reservation is perfect — you walk out of the July heat into an air-conditioned room that smells of roasting pig. Order the cochinillo in advance. The plate-smashing ceremony, the crackling skin, the Ponche Segoviano, the complimentary digestif from Jorge, Ángel, or David. Linger for two hours. This is the ending the journey deserves.</div>
+                <div class="tl-tags"><span class="tl-tag food">Traditional Asador</span><span class="tl-tag special">Bucket List Meal</span><span class="tl-tag tip">July: reserve 2–3 weeks ahead · 2PM ideal</span></div>
+                <div class="links-row"><a class="ext-link" href="https://www.asadormaribel.com/" target="_blank" rel="noopener">Official Website</a><a class="ext-link" href="tel:+34921441141">📞 +34 921 44 11 41</a><a class="ext-link" href="https://maps.google.com/?q=Asador+Maribel+Av+Padre+Claret+16+Segovia" target="_blank" rel="noopener">Google Maps</a></div>
+              </div>
+            </div>
+            <div class="tl-item">
+              <div class="tl-time">17:00</div>
+              <div class="tl-dot">🚄</div>
+              <div class="tl-content">
+                <div class="tl-place">Return to Madrid → Evening Flight or Final Night</div>
+                <div class="tl-note">27-minute train back to Madrid. Head to Puerta del Sol for a final stroll, or check if you're flying home tonight from Adolfo Suárez Madrid-Barajas Airport (MAD).</div>
+                <div class="tl-tags"><span class="tl-tag tip">MAD airport is 25 min from city center by Metro Line 8</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- end MAD days-grid -->
+  </div>
+</section>
+
+<!-- DINING SECTION -->
+<section id="dining">
+  <div class="section-inner">
+    <div class="section-header reveal">
+      <div class="section-eyebrow">Eat & Drink</div>
+      <h2 class="section-title">The <em>Food</em> Guide</h2>
+      <p class="section-desc">From morning pastries to Michelin-starred nights — every restaurant curated for your journey.</p>
+    </div>
+
+    <div class="dining-tabs">
+      <button class="dining-tab active" data-dining="bcn" onclick="document.querySelectorAll('.dining-panel').forEach(function(p){p.classList.remove('active')}); document.querySelectorAll('.dining-tab').forEach(function(b){b.classList.remove('active')}); document.getElementById('dining-bcn').classList.add('active'); this.classList.add('active');">Barcelona</button>
+      <button class="dining-tab" data-dining="mad" onclick="document.querySelectorAll('.dining-panel').forEach(function(p){p.classList.remove('active')}); document.querySelectorAll('.dining-tab').forEach(function(b){b.classList.remove('active')}); document.getElementById('dining-mad').classList.add('active'); this.classList.add('active');">Madrid & Segovia</button>
+    </div>
+
+    <!-- BARCELONA DINING -->
+    <div class="dining-panel active" id="dining-bcn">
+      <div class="dining-grid">
+
+        <div class="dining-card reveal">
+          <div class="dining-img-stub">
+            <div class="dining-pattern"></div>
+            <div class="dining-emoji">🍳</div>
+            <div class="dining-type-bar barcelona-bar"></div>
+          </div>
+          <div class="dining-info">
+            <div class="dining-name">Brunch & Cake</div>
+            <div class="dining-type">Brunch · Café · Pastry</div>
+            <div class="dining-desc">A beloved Eixample breakfast institution on Carrer d'Enric Granados. Lavender lattes, corn waffles, gluten-free options, and the warmest service in Barcelona.</div>
+            <div class="dining-meta">
+              <span class="star-rating">★★★★</span>
+              <span class="dining-rating-val">4.4</span>
+              <span class="hours-chip">Mon–Fri 9AM–5PM · Wknd 8AM–6PM</span>
+            </div>
+            <div class="dining-links"><a class="ext-link" href="https://brunchandcake.com/enric-granados/" target="_blank" rel="noopener">Website</a><a class="ext-link" href="https://maps.google.com/?q=Brunch+%26+Cake+Carrer+d%27Enric+Granados+19+Barcelona" target="_blank" rel="noopener">Maps</a></div>
+          </div>
+        </div>
+
+        <div class="dining-card reveal reveal-delay-1">
+          <div class="dining-img-stub">
+            <div class="dining-pattern"></div>
+            <div class="dining-emoji">🥐</div>
+            <div class="dining-type-bar barcelona-bar"></div>
+          </div>
+          <div class="dining-info">
+            <div class="dining-name">Origo Bakery</div>
+            <div class="dining-type">Artisan Bakery · Coffee</div>
+            <div class="dining-desc">Exceptional artisan pastries near Sant Antoni. The Ham & Cheese Napolitana and focaccia are unmissable. Spicy chai lattes and fresh-baked cardamom rolls in a warm, aesthetic space.</div>
+            <div class="dining-meta">
+              <span class="star-rating">★★★★★</span>
+              <span class="dining-rating-val">4.6</span>
+              <span class="hours-chip">Daily 8AM–8:30PM</span>
+            </div>
+            <div class="dining-links"><a class="ext-link" href="https://www.origobakery.com/" target="_blank" rel="noopener">Website</a><a class="ext-link" href="https://maps.google.com/?q=Origo+Bakery+Ronda+de+Sant+Pau+67+Barcelona" target="_blank" rel="noopener">Maps</a></div>
+          </div>
+        </div>
+
+        <div class="dining-card reveal reveal-delay-2">
+          <div class="dining-img-stub">
+            <div class="dining-pattern"></div>
+            <div class="dining-emoji">🦐</div>
+            <div class="dining-type-bar barcelona-bar"></div>
+          </div>
+          <div class="dining-info">
+            <div class="dining-name">Ciutat Comtal</div>
+            <div class="dining-type">Tapas Bar · Spanish</div>
+            <div class="dining-desc">The Eixample institution on Rambla de Catalunya. Patatas bravas, gambas al ajillo, fig with prosciutto, and bacalao with honey alioli. Perennial favourite — arrive early or wait.</div>
+            <div class="dining-meta">
+              <span class="star-rating">★★★★</span>
+              <span class="dining-rating-val">4.4</span>
+              <span class="hours-chip">Daily 9AM–1AM</span>
+            </div>
+            <div class="dining-links"><a class="ext-link" href="https://www.laflautagroup.com/en" target="_blank" rel="noopener">Website</a><a class="ext-link" href="https://maps.google.com/?q=Ciutat+Comtal+Rambla+de+Catalunya+18+Barcelona" target="_blank" rel="noopener">Maps</a></div>
+          </div>
+        </div>
+
+        <div class="dining-card reveal reveal-delay-3">
+          <div class="dining-img-stub">
+            <div class="dining-pattern"></div>
+            <div class="dining-emoji">🛒</div>
+            <div class="dining-type-bar barcelona-bar"></div>
+          </div>
+          <div class="dining-info">
+            <div class="dining-name">Mercat de la Boqueria</div>
+            <div class="dining-type">Market · Street Food</div>
+            <div class="dining-desc">La Rambla's legendary covered market. Oysters at the counter, jamón carved to order, fresh tropical fruits, and endless Catalan produce. Go early, go hungry.</div>
+            <div class="dining-meta">
+              <span class="star-rating">★★★★★</span>
+              <span class="dining-rating-val">4.5</span>
+              <span class="hours-chip">Mon–Sat 8AM–8:30PM · Closed Sunday</span>
+            </div>
+            <div class="dining-links"><a class="ext-link" href="https://www.boqueria.barcelona/en" target="_blank" rel="noopener">Official Website</a><a class="ext-link" href="https://maps.google.com/?q=Mercat+de+la+Boqueria+La+Rambla+91+Barcelona" target="_blank" rel="noopener">Maps</a></div>
+          </div>
+        </div>
+
+        <div class="dining-card reveal reveal-delay-1">
+          <div class="dining-img-stub">
+            <div class="dining-pattern"></div>
+            <div class="dining-emoji">🍷</div>
+            <div class="dining-type-bar barcelona-bar"></div>
+          </div>
+          <div class="dining-info">
+            <div class="dining-name">Mediamanga</div>
+            <div class="dining-type">Fine Dining · Mediterranean</div>
+            <div class="dining-desc">Open kitchen sophistication in Eixample. Sea urchin rice, sardine pizza, and a steak tartare that guests return for time and again. Reserve well ahead — closed Mon & Tue.</div>
+            <div class="dining-meta">
+              <span class="star-rating">★★★★</span>
+              <span class="dining-rating-val">4.4</span>
+              <span class="hours-chip">Wed–Sun evenings · Fri–Sun lunch</span>
+            </div>
+            <div class="dining-links"><a class="ext-link" href="https://www.mediamanga.es/" target="_blank" rel="noopener">Website</a><a class="ext-link" href="https://www.thefork.com/restaurant/mediamanga-r745498" target="_blank" rel="noopener">Reserve</a><a class="ext-link" href="https://maps.google.com/?q=Mediamanga+Carrer+d%27Aribau+13+Barcelona" target="_blank" rel="noopener">Maps</a></div>
+          </div>
+        </div>
+
+        <div class="dining-card reveal reveal-delay-2">
+          <div class="dining-img-stub">
+            <div class="dining-pattern"></div>
+            <div class="dining-emoji">🫒</div>
+            <div class="dining-type-bar barcelona-bar"></div>
+          </div>
+          <div class="dining-info">
+            <div class="dining-name">Sucursal Aceitera</div>
+            <div class="dining-type">Catalan Tapas · Bar & Grill</div>
+            <div class="dining-desc">A neighbourhood gem in Sant Antoni serving big portions of creative tapas at brilliant value. The hassle-back bravas, croquettes, and Pisco Sour are legendary among locals.</div>
+            <div class="dining-meta">
+              <span class="star-rating">★★★★</span>
+              <span class="dining-rating-val">4.2</span>
+              <span class="hours-chip">Mon–Wed from 6PM · Thu–Sun from noon</span>
+            </div>
+            <div class="dining-links"><a class="ext-link" href="https://www.instagram.com/sucursalaceitera/" target="_blank" rel="noopener">Instagram</a><a class="ext-link" href="https://maps.google.com/?q=Sucursal+Aceitera+Carrer+del+Comte+Borrell+36+Barcelona" target="_blank" rel="noopener">Maps</a></div>
+          </div>
+        </div>
+
+        <div class="dining-card reveal reveal-delay-3">
+          <div class="dining-img-stub">
+            <div class="dining-pattern"></div>
+            <div class="dining-emoji">🥚</div>
+            <div class="dining-type-bar barcelona-bar"></div>
+          </div>
+          <div class="dining-info">
+            <div class="dining-name">The Egg Lab</div>
+            <div class="dining-type">Creative Brunch · Sant Antoni</div>
+            <div class="dining-desc">One of Barcelona's most exciting brunch spots in Sant Antoni. The Korean Chicken Eggs Benedict is a city legend — seasoned chicken, silky hollandaise, and a gentle heat. Fresh juices, shakshuka, grilled sandwiches, and exceptional matcha lattes. A family-run business that puts care into every dish. Arrive early — it fills fast.</div>
+            <div class="dining-meta">
+              <span class="star-rating">★★★★★</span>
+              <span class="dining-rating-val">4.6</span>
+              <span class="hours-chip">Daily 9AM–4PM (5PM wknds)</span>
+            </div>
+            <div class="dining-links"><a class="ext-link" href="https://www.instagram.com/theegglab.barcelona/" target="_blank" rel="noopener">Instagram</a><a class="ext-link" href="https://maps.google.com/?q=The+Egg+Lab+Carrer+de+Sepulveda+80+Barcelona" target="_blank" rel="noopener">Maps</a></div>
+          </div>
+        </div>
+
+        <div class="dining-card reveal reveal-delay-1">
+          <div class="dining-img-stub">
+            <div class="dining-pattern"></div>
+            <div class="dining-emoji">🥘</div>
+            <div class="dining-type-bar barcelona-bar"></div>
+          </div>
+          <div class="dining-info">
+            <div class="dining-name">Maleducat</div>
+            <div class="dining-type">Creative Catalan · Sant Antoni</div>
+            <div class="dining-desc">A critically acclaimed Sant Antoni restaurant reimagining the traditional Catalan "casa de menjars." The rostit roll with plums and pine nuts, prawn tartare, perfect croquettes, and crunchy rice with Palamós prawns are standouts. The €49 tasting menu is exceptional value. Praised by The Infatuation as one of Barcelona's best. Closed Sundays — reserve 2+ weeks ahead in July.</div>
+            <div class="dining-meta">
+              <span class="star-rating">★★★★★</span>
+              <span class="dining-rating-val">4.7</span>
+              <span class="hours-chip">Mon–Sat lunch & dinner · Closed Sunday</span>
+            </div>
+            <div class="dining-links"><a class="ext-link" href="https://www.instagram.com/maleducat_restaurant/" target="_blank" rel="noopener">Instagram</a><a class="ext-link" href="https://www.thefork.es/restaurante/maleducat-r648082" target="_blank" rel="noopener">Reserve</a><a class="ext-link" href="https://maps.google.com/?q=Maleducat+Carrer+de+Manso+54+Barcelona" target="_blank" rel="noopener">Maps</a></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- MADRID DINING -->
+    <div class="dining-panel" id="dining-mad">
+      <div class="dining-grid">
+
+        <div class="dining-card reveal">
+          <div class="dining-img-stub">
+            <div class="dining-pattern"></div>
+            <div class="dining-emoji">🍫</div>
+            <div class="dining-type-bar madrid-bar"></div>
+          </div>
+          <div class="dining-info">
+            <div class="dining-name">Chocolatería San Ginés</div>
+            <div class="dining-type">Historic Café · Churros</div>
+            <div class="dining-desc">Madrid's most famous churrerría, open since 1894 and running 24/7. The thick, silky hot chocolate with fresh churros is a mandatory Madrid experience — especially late-night or early-morning.</div>
+            <div class="dining-meta">
+              <span class="star-rating">★★★★</span>
+              <span class="dining-rating-val">4.3</span>
+              <span class="hours-chip">Open 24 Hours · Every Day</span>
+            </div>
+            <div class="dining-links"><a class="ext-link" href="https://www.chocolateriasangines.com/" target="_blank" rel="noopener">Official Website</a><a class="ext-link" href="https://maps.google.com/?q=Chocolateria+San+Gines+Pasadizo+de+San+Gines+5+Madrid" target="_blank" rel="noopener">Maps</a></div>
+          </div>
+        </div>
+
+        <div class="dining-card reveal reveal-delay-1">
+          <div class="dining-img-stub">
+            <div class="dining-pattern"></div>
+            <div class="dining-emoji">☕</div>
+            <div class="dining-type-bar madrid-bar"></div>
+          </div>
+          <div class="dining-info">
+            <div class="dining-name">The Fix</div>
+            <div class="dining-type">Specialty Coffee · Brunch</div>
+            <div class="dining-desc">A refined specialty coffee and brunch café near Moncloa. Outstanding V60, rich cappuccinos, and an excellent breakfast menu. The best yogurt in Madrid, according to regulars.</div>
+            <div class="dining-meta">
+              <span class="star-rating">★★★★★</span>
+              <span class="dining-rating-val">4.6</span>
+              <span class="hours-chip">Mon–Fri 8AM–7PM · Wknd 9AM–7PM</span>
+            </div>
+            <div class="dining-links"><a class="ext-link" href="https://www.instagram.com/thefixmadrid/" target="_blank" rel="noopener">Instagram</a><a class="ext-link" href="https://maps.google.com/?q=The+Fix+Cafe+Calle+de+Luisa+Fernanda+15+Madrid" target="_blank" rel="noopener">Maps</a></div>
+          </div>
+        </div>
+
+        <div class="dining-card reveal reveal-delay-2">
+          <div class="dining-img-stub">
+            <div class="dining-pattern"></div>
+            <div class="dining-emoji">🐠</div>
+            <div class="dining-type-bar madrid-bar"></div>
+          </div>
+          <div class="dining-info">
+            <div class="dining-name">Vinoteca Moratin</div>
+            <div class="dining-type">Wine Bar · Michelin Bib Gourmand</div>
+            <div class="dining-desc">An intimate Michelin-recognised wine bar near the Prado. Chef Marcos sources exceptional ingredients personally. The tartare, seasonal fish of the day, and wine pairings are world-class.</div>
+            <div class="dining-meta">
+              <span class="star-rating">★★★★★</span>
+              <span class="dining-rating-val">4.8</span>
+              <span class="hours-chip">Check hours · Reservation essential</span>
+            </div>
+            <div class="dining-links"><a class="ext-link" href="https://www.vinotecamoratin.com/" target="_blank" rel="noopener">Website</a><a class="ext-link" href="https://www.thefork.es/restaurante/moratin-r748905" target="_blank" rel="noopener">Reserve</a><a class="ext-link" href="https://maps.google.com/?q=Moratin+Calle+de+Moratin+36+Madrid" target="_blank" rel="noopener">Maps</a></div>
+          </div>
+        </div>
+
+        <div class="dining-card reveal reveal-delay-3">
+          <div class="dining-img-stub">
+            <div class="dining-pattern"></div>
+            <div class="dining-emoji">🦪</div>
+            <div class="dining-type-bar madrid-bar"></div>
+          </div>
+          <div class="dining-info">
+            <div class="dining-name">Áston Gastroplace</div>
+            <div class="dining-type">Mediterranean · Fine Dining</div>
+            <div class="dining-desc">La Latina's best-kept secret with a near-perfect 4.9 rating. The scallops, Char Siu, and risotto are extraordinary. Walk-ins sometimes welcome — but reservations guarantee the full experience.</div>
+            <div class="dining-meta">
+              <span class="star-rating">★★★★★</span>
+              <span class="dining-rating-val">4.9</span>
+              <span class="hours-chip">Mon–Tue, Fri–Sun · Closed Wed–Thu</span>
+            </div>
+            <div class="dining-links"><a class="ext-link" href="https://www.instagram.com/astor.gastroplace/" target="_blank" rel="noopener">Instagram</a><a class="ext-link" href="https://www.thefork.es/restaurante/astor-gastro-place-r779025" target="_blank" rel="noopener">Reserve</a><a class="ext-link" href="https://maps.google.com/?q=Astor+Gastroplace+Calle+del+Almendro+9+Madrid" target="_blank" rel="noopener">Maps</a></div>
+          </div>
+        </div>
+
+        <div class="dining-card reveal reveal-delay-1">
+          <div class="dining-img-stub">
+            <div class="dining-pattern"></div>
+            <div class="dining-emoji">🌿</div>
+            <div class="dining-type-bar madrid-bar"></div>
+          </div>
+          <div class="dining-info">
+            <div class="dining-name">Algarabía</div>
+            <div class="dining-type">Rioja Cuisine · Sisters' Restaurant</div>
+            <div class="dining-desc">Ring the bell to enter this remarkable room run by sisters Pilar (chef) and Isabel (service). Rioja-style croquettes, borage, oxtail stew — a profoundly personal dining experience near the Opera.</div>
+            <div class="dining-meta">
+              <span class="star-rating">★★★★★</span>
+              <span class="dining-rating-val">4.5</span>
+              <span class="hours-chip">Lunch & Dinner service</span>
+            </div>
+            <div class="dining-links"><a class="ext-link" href="https://www.thefork.es/restaurante/algarabia-r802869" target="_blank" rel="noopener">Reserve</a><a class="ext-link" href="https://maps.google.com/?q=Restaurante+Algarabia+Calle+de+la+Union+8+Madrid" target="_blank" rel="noopener">Maps</a></div>
+          </div>
+        </div>
+
+        <div class="dining-card reveal reveal-delay-2">
+          <div class="dining-img-stub">
+            <div class="dining-pattern"></div>
+            <div class="dining-emoji">🍨</div>
+            <div class="dining-type-bar madrid-bar"></div>
+          </div>
+          <div class="dining-info">
+            <div class="dining-name">Eccolo Gelato</div>
+            <div class="dining-type">Artisan Gelato · Dessert</div>
+            <div class="dining-desc">Handmade gelato from raw ingredients — described by visitors as better than anything in Italy. Pistachio, chocolate mint, Greek (honey & walnuts), and a hot chocolate worth crossing the Atlantic for.</div>
+            <div class="dining-meta">
+              <span class="star-rating">★★★★★</span>
+              <span class="dining-rating-val">4.6</span>
+              <span class="hours-chip">Daily from 3–4PM to 1AM</span>
+            </div>
+            <div class="dining-links"><a class="ext-link" href="https://www.instagram.com/eccologelato/" target="_blank" rel="noopener">Instagram</a><a class="ext-link" href="https://maps.google.com/?q=Eccolo+Gelato+Calle+de+la+Cruz+25+Madrid" target="_blank" rel="noopener">Maps</a></div>
+          </div>
+        </div>
+
+        <div class="dining-card reveal reveal-delay-3">
+          <div class="dining-img-stub">
+            <div class="dining-pattern"></div>
+            <div class="dining-emoji">✨</div>
+            <div class="dining-type-bar madrid-bar"></div>
+          </div>
+          <div class="dining-info">
+            <div class="dining-name">Restaurante Clos</div>
+            <div class="dining-type">Michelin Star · Fine Dining</div>
+            <div class="dining-desc">The Chamberí celebration restaurant — "a party" concept with inventive tasting menus, impeccable service, and a playlist that keeps the energy high. Madrid's most memorable splurge dinner.</div>
+            <div class="dining-meta">
+              <span class="star-rating">★★★★★</span>
+              <span class="dining-rating-val">4.6</span>
+              <span class="hours-chip">Mon, Thu–Sun · Closed Tue–Wed</span>
+            </div>
+            <div class="dining-links"><a class="ext-link" href="https://www.restauranteclos.com/" target="_blank" rel="noopener">Website</a><a class="ext-link" href="https://www.thefork.es/restaurante/clos-r781099" target="_blank" rel="noopener">Reserve</a><a class="ext-link" href="https://maps.google.com/?q=Restaurante+Clos+Calle+Raimundo+Fernandez+Villaverde+28+Madrid" target="_blank" rel="noopener">Maps</a></div>
+          </div>
+        </div>
+
+        <div class="dining-card reveal reveal-delay-1">
+          <div class="dining-img-stub">
+            <div class="dining-pattern"></div>
+            <div class="dining-emoji">🐷</div>
+            <div class="dining-type-bar madrid-bar"></div>
+          </div>
+          <div class="dining-info">
+            <div class="dining-name">Asador Maribel — Segovia</div>
+            <div class="dining-type">Traditional Asador · Cochinillo</div>
+            <div class="dining-desc">The legendary roast suckling pig restaurant near the Segovia Aqueduct. The ceremonial plate-smashing, tender cochinillo, Ponche Segoviano dessert, and complimentary digestifs make this one of Spain's great meals.</div>
+            <div class="dining-meta">
+              <span class="star-rating">★★★★★</span>
+              <span class="dining-rating-val">4.7</span>
+              <span class="hours-chip">Daily 10AM–5PM · Tue–Sat eve 8–11PM</span>
+            </div>
+            <div class="dining-links"><a class="ext-link" href="https://www.asadormaribel.com/" target="_blank" rel="noopener">Official Website</a><a class="ext-link" href="tel:+34921441141">📞 Call to Reserve</a><a class="ext-link" href="https://maps.google.com/?q=Asador+Maribel+Av+Padre+Claret+16+Segovia" target="_blank" rel="noopener">Maps</a></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- MAPS SECTION -->
+<script>
+function switchMap(panelId, btn) {
+  document.querySelectorAll('.map-panel').forEach(function(p) { p.classList.remove('active'); });
+  document.querySelectorAll('.map-tab-btn').forEach(function(b) { b.classList.remove('active'); });
+  var panel = document.getElementById(panelId);
+  if (panel) panel.classList.add('active');
+  if (btn) btn.classList.add('active');
+  // Trigger Leaflet resize if available
+  var ids = {'barcelona-map':'leaflet-barcelona','lloret-map':'leaflet-lloret','madrid-map':'leaflet-madrid','segovia-map':'leaflet-segovia'};
+  var leafletId = ids[panelId];
+  if (leafletId && window.__maps && window.__maps[leafletId]) {
+    setTimeout(function() {
+      window.__maps[leafletId].invalidateSize();
+      setTimeout(function() { window.__maps[leafletId].invalidateSize(); }, 300);
+    }, 50);
+  }
+  // Trigger lazy init for non-Barcelona maps
+  if (typeof window.__initMapForTab === 'function') {
+    setTimeout(function() { window.__initMapForTab(panelId); }, 100);
+  }
+}
+</script>
+<section id="maps">
+  <div class="section-inner">
+    <div class="section-header reveal">
+      <div class="section-eyebrow">Navigate</div>
+      <h2 class="section-title">Interactive <em>Maps</em></h2>
+      <p class="section-desc">Explore your key locations in each city — from major sights to every curated restaurant.</p>
+    </div>
+
+    <div class="maps-tabs reveal">
+      <button class="map-tab-btn active" data-map="barcelona-map" onclick="switchMap('barcelona-map', this)">Barcelona</button>
+      <button class="map-tab-btn" data-map="lloret-map" onclick="switchMap('lloret-map', this)">Lloret de Mar</button>
+      <button class="map-tab-btn" data-map="madrid-map" onclick="switchMap('madrid-map', this)">Madrid</button>
+      <button class="map-tab-btn" data-map="segovia-map" onclick="switchMap('segovia-map', this)">Segovia</button>
+    </div>
+
+    <div class="map-panel active" id="barcelona-map">
+      <div class="map-frame reveal">
+        <div id="leaflet-barcelona" style="width:100%;height:480px;"></div>
+      </div>
+      <div class="map-legend">
+        <div class="legend-item"><div class="legend-dot sight"></div>Sagrada Família · Park Güell · Casa Batlló · Gothic Quarter · Barceloneta</div>
+        <div class="legend-item"><div class="legend-dot food"></div>Brunch & Cake · Origo · Ciutat Comtal · La Boqueria · Mediamanga · Aceitera · Fonda Pepa</div>
+      </div>
+    </div>
+
+    <div class="map-panel" id="lloret-map">
+      <div class="map-frame reveal">
+        <div id="leaflet-lloret" style="width:100%;height:480px;"></div>
+      </div>
+      <div class="map-legend">
+        <div class="legend-item"><div class="legend-dot special"></div>Jardins de Santa Clotilde — arrive 7:30PM, stay for 9:20PM sunset</div>
+        <div class="legend-item"><div class="legend-dot sight"></div>Lloret Beach · Sant Joan Castle · Old Town</div>
+      </div>
+    </div>
+
+    <div class="map-panel" id="madrid-map">
+      <div class="map-frame reveal">
+        <div id="leaflet-madrid" style="width:100%;height:480px;"></div>
+      </div>
+      <div class="map-legend">
+        <div class="legend-item"><div class="legend-dot sight"></div>Prado · Royal Palace · El Retiro · Plaza Mayor · Puerta del Sol</div>
+        <div class="legend-item"><div class="legend-dot food"></div>San Ginés · The Fix · Vinoteca Moratin · Áston · Algarabía · Eccolo · Clos</div>
+      </div>
+    </div>
+
+    <div class="map-panel" id="segovia-map">
+      <div class="map-frame reveal">
+        <div id="leaflet-segovia" style="width:100%;height:480px;"></div>
+      </div>
+      <div class="map-legend">
+        <div class="legend-item"><div class="legend-dot sight"></div>Roman Aqueduct · Alcázar · Cathedral · Old Town</div>
+        <div class="legend-item"><div class="legend-dot food"></div>Asador Maribel — Av. Padre Claret, 16</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TIPS -->
+<section id="tips">
+  <div class="section-inner">
+    <div class="section-header reveal">
+      <div class="section-eyebrow">July Essentials</div>
+      <h2 class="section-title">Tips for <em>Peak Summer</em></h2>
+    </div>
+    <div class="tips-grid">
+        <div class="tip-card reveal">
+        <div class="tip-icon">🎟️</div>
+        <div class="tip-title">Book Tickets in Advance</div>
+        <div class="tip-text">Sagrada Família and Park Güell sell out weeks ahead — buy online immediately after booking flights. Same for Casa Batlló evening sessions and the Prado. The Royal Palace can be bought same-day but queue early.</div>
+        <div class="links-row" style="margin-top:1rem;">
+          <a class="ext-link" href="https://sagradafamilia.org/en/tickets-individuals" target="_blank" rel="noopener">Sagrada Família</a>
+          <a class="ext-link" href="https://www.parkguell.barcelona/en/buy-tickets/" target="_blank" rel="noopener">Park Güell</a>
+          <a class="ext-link" href="https://www.casabatllo.es/en/" target="_blank" rel="noopener">Casa Batlló</a>
+          <a class="ext-link" href="https://www.museodelprado.es/en/visit-the-prado/buy-tickets" target="_blank" rel="noopener">Prado Museum</a>
+        </div>
+      </div>
+      <div class="tip-card reveal reveal-delay-1">
+        <div class="tip-icon">🕐</div>
+        <div class="tip-title">July Meal Times</div>
+        <div class="tip-text">In July, lunch is 2–4 PM and dinner is 9:30–11 PM. Eating before 9PM for dinner is tourist behaviour. The rhythm makes perfect heat-sense: the long siesta from 2–6PM sits between the hottest hours. Restaurants are air-conditioned — use them as cool retreats during the day too.</div>
+      </div>
+      <div class="tip-card reveal reveal-delay-2">
+        <div class="tip-icon">🌅</div>
+        <div class="tip-title">Jardins de Santa Clotilde Timing</div>
+        <div class="tip-text">In early July, sunset is around 9:20 PM — one of the longest evenings of the year. Arrive at the Jardins by 7:30 PM to explore the terraces in golden afternoon light, then watch the full sunset from the clifftop belvedere. Check summer hours on arrival as they may extend beyond the standard 6 PM closing time.</div>
+        <div class="links-row" style="margin-top:1rem;">
+          <a class="ext-link" href="https://www.lloretdemar.org/en/garden-of-santa-clotilde" target="_blank" rel="noopener">Official Info</a>
+          <a class="ext-link" href="https://maps.google.com/?q=Jardins+de+Santa+Clotilde+Lloret+de+Mar" target="_blank" rel="noopener">Google Maps</a>
+        </div>
+      </div>
+      <div class="tip-card reveal reveal-delay-3">
+        <div class="tip-icon">🚆</div>
+        <div class="tip-title">Transport Hacks</div>
+        <div class="tip-text">In Barcelona, the T-Casual 10-trip Metro card saves money. In Madrid, a 10-trip Metrobus card works on metro and buses. For Segovia, the Avant train (27 min) beats the bus by far. <strong>AVE tickets for July 2026 are typically released 60 days before travel — set a calendar reminder for May 1, 2026</strong> to book the moment they drop and get the best fares.</div>
+        <div class="links-row" style="margin-top:1rem;">
+          <a class="ext-link" href="https://www.renfe.com/es/en" target="_blank" rel="noopener">Renfe Train Booking</a>
+          <a class="ext-link" href="https://www.tmb.cat/en/barcelona-transport/xarxa-metro/index" target="_blank" rel="noopener">Barcelona Metro (TMB)</a>
+          <a class="ext-link" href="https://www.crtm.es/en/" target="_blank" rel="noopener">Madrid Metro (CRTM)</a>
+        </div>
+      </div>
+      <div class="tip-card reveal reveal-delay-1">
+        <div class="tip-icon">💶</div>
+        <div class="tip-title">Money & July Pricing</div>
+        <div class="tip-text">July is peak season — hotel rates are 30–50% higher than spring. Book accommodation 2–3 months ahead, especially in Barcelona where coastal hotels fill fast. Restaurant prices are standard year-round. Tipping: round up or leave €1–2 per person. Use bank ATMs over tourist-area machines for better rates. Credit cards accepted almost universally.</div>
+      </div>
+      <div class="tip-card reveal reveal-delay-2">
+        <div class="tip-icon">📱</div>
+        <div class="tip-title">Apps to Download</div>
+        <div class="tip-text">Google Maps (offline Barcelona & Madrid), Renfe app for train tickets, TheFork / ElTenedor for restaurant reservations, Citymapper for Barcelona Metro, Google Translate with camera mode for menus.</div>
+        <div class="links-row" style="margin-top:1rem;">
+          <a class="ext-link" href="https://www.thefork.com/" target="_blank" rel="noopener">TheFork Reservations</a>
+          <a class="ext-link" href="https://citymapper.com/barcelona" target="_blank" rel="noopener">Citymapper Barcelona</a>
+          <a class="ext-link" href="https://citymapper.com/madrid" target="_blank" rel="noopener">Citymapper Madrid</a>
+        </div>
+      </div>
+      <div class="tip-card reveal reveal-delay-3">
+        <div class="tip-icon">🏨</div>
+        <div class="tip-title">Where to Stay in July</div>
+        <div class="tip-text">In Barcelona, Eixample is ideal — central and walkable. In Madrid, Chueca or La Latina for character, Sol/Centro for pure convenience. <strong>Book immediately for July</strong> — both cities sell out weeks in advance for peak summer. Prioritise air-conditioning as an absolute must, not a luxury. A rooftop pool in Barcelona is worth the upgrade.</div>
+      </div>
+      <div class="tip-card reveal reveal-delay-1">
+        <div class="tip-icon">🐷</div>
+        <div class="tip-title">Asador Maribel Reservation</div>
+        <div class="tip-text">Call Asador Maribel (+34 921 44 11 41) at least 2–3 weeks ahead for a July lunch reservation. A 2PM slot is ideal in summer — you step from the heat into a cool, festive room. Request the cochinillo specifically. Closed for dinner on Sundays and Mondays.</div>
+        <div class="links-row" style="margin-top:1rem;">
+          <a class="ext-link" href="https://www.asadormaribel.com/" target="_blank" rel="noopener">Official Website</a>
+          <a class="ext-link" href="tel:+34921441141">📞 +34 921 44 11 41</a>
+          <a class="ext-link" href="https://maps.google.com/?q=Asador+Maribel+Av+Padre+Claret+16+Segovia" target="_blank" rel="noopener">Google Maps</a>
+        </div>
+      </div>
+
+      <div class="tip-card reveal reveal-delay-2">
+        <div class="tip-icon">🎒</div>
+        <div class="tip-title">What to Pack for July Spain</div>
+        <div class="tip-text">Linen or technical-fabric clothing only — cotton stays damp. A compact folding fan is non-negotiable in Madrid. SPF 50 sunscreen applied twice daily. A reusable 1-litre water bottle (refill constantly). A light scarf for cool museum interiors. Comfortable walking shoes you can wear in heat — no new shoes. A small portable charger for long evenings out. Sunglasses with UV protection.</div>
+      </div>
+
+      <div class="tip-card reveal reveal-delay-3">
+        <div class="tip-icon">☀️</div>
+        <div class="tip-title">Surviving the July Heat</div>
+        <div class="tip-text">Rule: outdoors before 11AM and after 6PM only. Between noon and 5PM, be inside — restaurants, museums, hotels. Drink 2–3 litres of water daily (far more than you think you need). Cold agua con gas at every bar. In Madrid especially, the dry Castilian heat is deceptive — you won't feel yourself sweating, but dehydration happens fast. Horchata and granizado de limón are the local cooling remedies and are delicious.</div>
+      </div>
+
+      <div class="tip-card reveal reveal-delay-1">
+        <div class="tip-icon">🌙</div>
+        <div class="tip-title">Embrace the Summer Nights</div>
+        <div class="tip-text">July's long evenings are the real gift — sunset at 9:20PM means the golden hour is free entertainment. In both cities, the streets come fully alive after 8PM: terrace bars fill, families walk, restaurants open, music starts. Plan your best experiences for after 8PM. The coolest, most memorable moments of this trip will happen in the hours most travellers are already in bed.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- BUDGET -->
+<section id="budget">
+  <div class="section-inner">
+    <div class="section-header reveal">
+      <div class="section-eyebrow">July 2026 · Solo Traveller · USD</div>
+      <h2 class="section-title">Trip <em>Budget Estimator</em></h2>
+      <p class="section-desc">A full cost breakdown across three tiers — Budget, Mid-Range (recommended), and Luxury — based on current 2026 pricing. All figures in USD, per person.</p>
+    </div>
+
+    <!-- THREE TIER CARDS -->
+    <div class="budget-tiers">
+      <div class="tier-card budget-tier reveal">
+        <div class="tier-header">
+          <div class="tier-label">Frugal Traveller</div>
+          <div class="tier-total">$4,800</div>
+          <div class="tier-per-day">~$600 / day all-in</div>
+          <div class="tier-badge">Budget</div>
+        </div>
+        <div class="tier-body">
+          <div class="tier-row"><span class="tier-row-label">Flights (economy)</span><span class="tier-row-val">$800</span></div>
+          <div class="tier-row"><span class="tier-row-label">Hotels (3-star)</span><span class="tier-row-val">$1,440</span></div>
+          <div class="tier-row"><span class="tier-row-label">Food & drink</span><span class="tier-row-val">$1,200</span></div>
+          <div class="tier-row"><span class="tier-row-label">Attractions</span><span class="tier-row-val">$280</span></div>
+          <div class="tier-row"><span class="tier-row-label">Transport</span><span class="tier-row-val">$380</span></div>
+          <div class="tier-row"><span class="tier-row-label">Misc & buffer</span><span class="tier-row-val">$700</span></div>
+        </div>
+      </div>
+      <div class="tier-card mid-tier featured reveal reveal-delay-1">
+        <div class="tier-header">
+          <div class="tier-label">Recommended</div>
+          <div class="tier-total">$7,800</div>
+          <div class="tier-per-day">~$975 / day all-in</div>
+          <div class="tier-badge">★ Mid-Range</div>
+        </div>
+        <div class="tier-body">
+          <div class="tier-row"><span class="tier-row-label">Flights (economy)</span><span class="tier-row-val">$1,200</span></div>
+          <div class="tier-row"><span class="tier-row-label">Hotels (4-star)</span><span class="tier-row-val">$2,400</span></div>
+          <div class="tier-row"><span class="tier-row-label">Food & drink</span><span class="tier-row-val">$2,400</span></div>
+          <div class="tier-row"><span class="tier-row-label">Attractions</span><span class="tier-row-val">$380</span></div>
+          <div class="tier-row"><span class="tier-row-label">Transport</span><span class="tier-row-val">$480</span></div>
+          <div class="tier-row"><span class="tier-row-label">Misc & buffer</span><span class="tier-row-val">$940</span></div>
+        </div>
+      </div>
+      <div class="tier-card lux-tier reveal reveal-delay-2">
+        <div class="tier-header">
+          <div class="tier-label">No Limits</div>
+          <div class="tier-total">$15,000</div>
+          <div class="tier-per-day">~$1,875 / day all-in</div>
+          <div class="tier-badge">Luxury</div>
+        </div>
+        <div class="tier-body">
+          <div class="tier-row"><span class="tier-row-label">Flights (business)</span><span class="tier-row-val">$5,500</span></div>
+          <div class="tier-row"><span class="tier-row-label">Hotels (5-star)</span><span class="tier-row-val">$4,800</span></div>
+          <div class="tier-row"><span class="tier-row-label">Food & drink</span><span class="tier-row-val">$3,200</span></div>
+          <div class="tier-row"><span class="tier-row-label">Attractions</span><span class="tier-row-val">$500</span></div>
+          <div class="tier-row"><span class="tier-row-label">Transport</span><span class="tier-row-val">$600</span></div>
+          <div class="tier-row"><span class="tier-row-label">Misc & buffer</span><span class="tier-row-val">$400</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DETAILED BREAKDOWN TABLE -->
+    <div class="budget-breakdown reveal">
+      <div class="breakdown-header">
+        <span style="font-size:1.4rem;">📊</span>
+        <h3>Mid-Range Detailed Breakdown — Line by Line</h3>
+      </div>
+      <div class="breakdown-body">
+        <div class="breakdown-row header-row">
+          <div>Category</div><div style="text-align:right">Budget</div><div style="text-align:right">Mid-Range</div><div style="text-align:right">Luxury</div>
+        </div>
+
+        <!-- FLIGHTS -->
+        <div class="breakdown-row">
+          <div>
+            <div class="breakdown-category">✈️ &nbsp;Flights — SFO → BCN, MAD → SFO</div>
+            <div class="breakdown-note">Economy: United/Iberia via Heathrow or direct. July fares from ~$777–$1,100 RT. Business class adds ~$4,300.</div>
+          </div>
+          <div class="breakdown-val val-budget">$800</div>
+          <div class="breakdown-val val-mid">$1,200</div>
+          <div class="breakdown-val val-lux">$5,500</div>
+        </div>
+
+        <!-- BCN AVE TRAIN -->
+        <div class="breakdown-row">
+          <div>
+            <div class="breakdown-category">🚄 &nbsp;AVE Train — Barcelona → Madrid</div>
+            <div class="breakdown-note">Renfe high-speed, 2.5 hrs from Sants. Book 3+ weeks ahead. Preferente (1st class) ~$80.</div>
+          </div>
+          <div class="breakdown-val val-budget">$35</div>
+          <div class="breakdown-val val-mid">$55</div>
+          <div class="breakdown-val val-lux">$80</div>
+        </div>
+
+        <!-- SEGOVIA TRAIN -->
+        <div class="breakdown-row">
+          <div>
+            <div class="breakdown-category">🚆 &nbsp;Avant Train — Madrid → Segovia (return)</div>
+            <div class="breakdown-note">27 minutes each way. ~€12/pp each way. Bus from Segovia station to Aqueduct: €2.25.</div>
+          </div>
+          <div class="breakdown-val val-budget">$28</div>
+          <div class="breakdown-val val-mid">$28</div>
+          <div class="breakdown-val val-lux">$80</div>
+        </div>
+
+        <!-- BCN LOCAL TRANSPORT -->
+        <div class="breakdown-row">
+          <div>
+            <div class="breakdown-category">🚇 &nbsp;Barcelona Local Transport</div>
+            <div class="breakdown-note">T-Casual 10-trip Metro card (~€13). Aerobus from airport (~€6.75). Occasional taxi for late nights.</div>
+          </div>
+          <div class="breakdown-val val-budget">$40</div>
+          <div class="breakdown-val val-mid">$65</div>
+          <div class="breakdown-val val-lux">$120</div>
+        </div>
+
+        <!-- LLORET CAR -->
+        <div class="breakdown-row">
+          <div>
+            <div class="breakdown-category">🚗 &nbsp;Car Rental — Lloret de Mar Day Trip</div>
+            <div class="breakdown-note">1-day rental from Barcelona (~€50–80 incl. insurance + AP-7 tolls ~€12 RT). SARFA bus alternative ~€20 RT.</div>
+          </div>
+          <div class="breakdown-val val-budget">$22</div>
+          <div class="breakdown-val val-mid">$85</div>
+          <div class="breakdown-val val-lux">$120</div>
+        </div>
+
+        <!-- MADRID LOCAL TRANSPORT -->
+        <div class="breakdown-row">
+          <div>
+            <div class="breakdown-category">🚇 &nbsp;Madrid Local Transport</div>
+            <div class="breakdown-note">10-trip Metrobús card (~€6.10). Metro Line 8 from airport (~€5). Taxis for late-night returns.</div>
+          </div>
+          <div class="breakdown-val val-budget">$35</div>
+          <div class="breakdown-val val-mid">$55</div>
+          <div class="breakdown-val val-lux">$100</div>
+        </div>
+
+        <!-- BCN HOTEL -->
+        <div class="breakdown-row">
+          <div>
+            <div class="breakdown-category">🏨 &nbsp;Barcelona Hotel — 4 Nights (Eixample)</div>
+            <div class="breakdown-note">3-star avg ~$160/nt · 4-star avg ~$220/nt in July · 5-star from ~$420/nt. Tourist tax ~€5–15/pp/night added from Apr 2026.</div>
+          </div>
+          <div class="breakdown-val val-budget">$640</div>
+          <div class="breakdown-val val-mid">$880</div>
+          <div class="breakdown-val val-lux">$1,680</div>
+        </div>
+
+        <!-- MAD HOTEL -->
+        <div class="breakdown-row">
+          <div>
+            <div class="breakdown-category">🏨 &nbsp;Madrid Hotel — 4 Nights (Chueca / La Latina)</div>
+            <div class="breakdown-note">Good news: July is actually low season for Madrid hotels (locals flee the heat). 4-star avg ~$160–$200/nt. 5-star from ~$297/nt.</div>
+          </div>
+          <div class="breakdown-val val-budget">$640</div>
+          <div class="breakdown-val val-mid">$800</div>
+          <div class="breakdown-val val-lux">$1,600</div>
+        </div>
+
+        <!-- BCN FOOD -->
+        <div class="breakdown-row">
+          <div>
+            <div class="breakdown-category">🍽️ &nbsp;Barcelona Dining — 4 Days</div>
+            <div class="breakdown-note">Brunch & Cake / Origo / Egg Lab (~$20) · Boqueria grazing (~$25) · Tapas dinners at Ciutat Comtal, Aceitera (~$45) · Fine dining Mediamanga (~$90). Avg ~$120–$180/day.</div>
+          </div>
+          <div class="breakdown-val val-budget">$480</div>
+          <div class="breakdown-val val-mid">$680</div>
+          <div class="breakdown-val val-lux">$1,000</div>
+        </div>
+
+        <!-- LLORET FOOD -->
+        <div class="breakdown-row">
+          <div>
+            <div class="breakdown-category">🐟 &nbsp;Lloret de Mar Dining</div>
+            <div class="breakdown-note">Long seafood lunch at beachfront restaurant. Estimated ~€35–55 for a generous paella/fideuà meal with wine.</div>
+          </div>
+          <div class="breakdown-val val-budget">$40</div>
+          <div class="breakdown-val val-mid">$65</div>
+          <div class="breakdown-val val-lux">$100</div>
+        </div>
+
+        <!-- MAD FOOD -->
+        <div class="breakdown-row">
+          <div>
+            <div class="breakdown-category">🍽️ &nbsp;Madrid Dining — 4 Days</div>
+            <div class="breakdown-note">San Ginés / The Fix (~$15) · Algarabía lunch (~$55) · Eccolo Gelato (~$8) · Fine dining: Áston, Moratin, Clos (~$100–$150). Avg ~$120–$200/day.</div>
+          </div>
+          <div class="breakdown-val val-budget">$480</div>
+          <div class="breakdown-val val-mid">$700</div>
+          <div class="breakdown-val val-lux">$1,100</div>
+        </div>
+
+        <!-- SEGOVIA FOOD -->
+        <div class="breakdown-row">
+          <div>
+            <div class="breakdown-category">🐷 &nbsp;Segovia — Asador Maribel Lunch</div>
+            <div class="breakdown-note">Cochinillo menu ~€35–45 pp · Wine pairing ~€20 · Ponche dessert included. One of the best-value meals on the entire trip.</div>
+          </div>
+          <div class="breakdown-val val-budget">$60</div>
+          <div class="breakdown-val val-mid">$80</div>
+          <div class="breakdown-val val-lux">$100</div>
+        </div>
+
+        <!-- DRINKS -->
+        <div class="breakdown-row">
+          <div>
+            <div class="breakdown-category">🍷 &nbsp;Drinks, Coffees & Sundries</div>
+            <div class="breakdown-note">Café con leche ~€1.50 · Cañas (draft beer) ~€2.50 · Cocktails ~€10–15 · Terrace surcharge 10% in busy areas.</div>
+          </div>
+          <div class="breakdown-val val-budget">$140</div>
+          <div class="breakdown-val val-mid">$220</div>
+          <div class="breakdown-val val-lux">$400</div>
+        </div>
+
+        <!-- ATTRACTIONS BCN -->
+        <div class="breakdown-row">
+          <div>
+            <div class="breakdown-category">🎟️ &nbsp;Barcelona Attractions</div>
+            <div class="breakdown-note">Sagrada Família + Tower ~€36 · Park Güell ~€10 · Casa Batlló (Magic Nights) ~€49 · Jardins Santa Clotilde €6. Total ~€100.</div>
+          </div>
+          <div class="breakdown-val val-budget">$90</div>
+          <div class="breakdown-val val-mid">$115</div>
+          <div class="breakdown-val val-lux">$160</div>
+        </div>
+
+        <!-- ATTRACTIONS MAD -->
+        <div class="breakdown-row">
+          <div>
+            <div class="breakdown-category">🎟️ &nbsp;Madrid & Segovia Attractions</div>
+            <div class="breakdown-note">Prado ~€15 (free after 6PM) · Royal Palace ~€14 · Reina Sofía ~€12 · Thyssen ~€14 · Alcázar Segovia ~€8. Total ~€63.</div>
+          </div>
+          <div class="breakdown-val val-budget">$50</div>
+          <div class="breakdown-val val-mid">$75</div>
+          <div class="breakdown-val val-lux">$100</div>
+        </div>
+
+        <!-- FESTIVALS -->
+        <div class="breakdown-row">
+          <div>
+            <div class="breakdown-category">🎶 &nbsp;Festival Tickets (optional)</div>
+            <div class="breakdown-note">Festival Grec (Barcelona) from €15 · Veranos de la Villa many events free · Noches del Botánico from €35 · Mad Cool from €95/day.</div>
+          </div>
+          <div class="breakdown-val val-budget">$0</div>
+          <div class="breakdown-val val-mid">$80</div>
+          <div class="breakdown-val val-lux">$250</div>
+        </div>
+
+        <!-- TRAVEL INSURANCE -->
+        <div class="breakdown-row">
+          <div>
+            <div class="breakdown-category">🛡️ &nbsp;Travel Insurance</div>
+            <div class="breakdown-note">Strongly recommended for an 8-day Europe trip. Covers medical, cancellation, and baggage. ~1–3% of total trip cost.</div>
+          </div>
+          <div class="breakdown-val val-budget">$120</div>
+          <div class="breakdown-val val-mid">$180</div>
+          <div class="breakdown-val val-lux">$280</div>
+        </div>
+
+        <!-- MISC -->
+        <div class="breakdown-row">
+          <div>
+            <div class="breakdown-category">🛍️ &nbsp;Shopping, Gifts & Contingency (15%)</div>
+            <div class="breakdown-note">Souvenirs, a bottle of Rioja to bring home, incidentals, unexpected costs. Always budget a 15% buffer in peak season.</div>
+          </div>
+          <div class="breakdown-val val-budget">$400</div>
+          <div class="breakdown-val val-mid">$760</div>
+          <div class="breakdown-val val-lux">$1,330</div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- MONEY-SAVING NOTES -->
+    <div class="section-header reveal" style="margin-bottom:2rem;">
+      <div class="section-eyebrow">Smart Spending</div>
+      <h2 class="section-title">Where to <em>Save & Splurge</em></h2>
+    </div>
+    <div class="budget-notes">
+      <div class="budget-note-card reveal">
+        <div class="budget-note-icon">💚</div>
+        <div class="budget-note-text"><strong>Save: Prado Museum</strong> — free entry every weekday 6–8PM and Sunday 5–7PM. The last two hours are busier but completely free, saving €15.</div>
+      </div>
+      <div class="budget-note-card reveal reveal-delay-1">
+        <div class="budget-note-icon">💚</div>
+        <div class="budget-note-text"><strong>Save: Menú del Día</strong> — Spain's secret weapon. A full 3-course lunch with wine for €13–20 at most restaurants, even good ones. Never pay dinner prices for midday meals.</div>
+      </div>
+      <div class="budget-note-card reveal reveal-delay-2">
+        <div class="budget-note-icon">💚</div>
+        <div class="budget-note-text"><strong>Save: Madrid Hotels in July</strong> — counterintuitively, Madrid hotels are cheaper in July than April or May as locals leave. You can often find 4-star rooms for ~$160/night.</div>
+      </div>
+      <div class="budget-note-card reveal reveal-delay-3">
+        <div class="budget-note-icon">💚</div>
+        <div class="budget-note-text"><strong>Save: Veranos de la Villa</strong> — Madrid's city-wide summer arts festival has dozens of free or €5–15 performances. Check the programme — some nights rival paid concerts.</div>
+      </div>
+      <div class="budget-note-card reveal reveal-delay-1">
+        <div class="budget-note-icon">🌟</div>
+        <div class="budget-note-text"><strong>Splurge: Sagrada Família Tower Access</strong> — the extra €10 for tower entry completely transforms the experience. The views and interior detail from above are irreplaceable.</div>
+      </div>
+      <div class="budget-note-card reveal reveal-delay-2">
+        <div class="budget-note-icon">🌟</div>
+        <div class="budget-note-text"><strong>Splurge: Casa Batlló Magic Nights</strong> — the July evening experience with augmented reality on the rooftop is expensive (~€49) but genuinely unlike anything else in Barcelona.</div>
+      </div>
+      <div class="budget-note-card reveal reveal-delay-3">
+        <div class="budget-note-icon">🌟</div>
+        <div class="budget-note-text"><strong>Splurge: Restaurante Clos</strong> — the wine pairing adds ~€50 but elevates an already extraordinary meal into something that will genuinely be a life highlight. Worth every euro.</div>
+      </div>
+      <div class="budget-note-card reveal reveal-delay-1">
+        <div class="budget-note-icon">🌟</div>
+        <div class="budget-note-text"><strong>Splurge: Hotel Upgrade in Barcelona</strong> — a 4-star Eixample hotel with AC (essential in July) and a rooftop pool is worth the extra $60/night over a 3-star. Sleep quality and heat recovery matter on an 8-day trip.</div>
+      </div>
+    </div>
+
+    <p class="fx-note reveal">All USD estimates based on EUR/USD ~1.08 · Prices reflect July 2026 peak-season rates · Individual costs will vary · Add 15% contingency buffer recommended</p>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <span class="footer-logo">España Dorada</span>
+  <p class="footer-tagline">8 days · 4 cities · 1 unforgettable July journey</p>
+  <div class="footer-links">
+    <a href="#overview">Overview</a>
+    <a href="#flight">Flight</a>
+    <a href="#barcelona">Barcelona</a>
+    <a href="#madrid">Madrid</a>
+    <a href="#dining">Dining</a>
+    <a href="#maps">Maps</a>
+    <a href="#tips">Tips</a>
+    <a href="#budget">Budget</a>
+  </div>
+  <p class="footer-copy">SFO · BCN · Lloret de Mar · MAD · Segovia · Early July 2026 · Peak Summer Spain</p>
+</footer>
+
+<script>
+// ── EXTERNAL LINK ICONS ──
+var extIcon = '<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 2H2v8h8V7M7 1h4v4M11 1L5 7"/></svg>';
+document.querySelectorAll('.ext-link').forEach(function(el) {
+  if (!el.querySelector('svg')) el.insertAdjacentHTML('beforeend', extIcon);
+});
+
+// ── NAVBAR SCROLL ──
+var navbar = document.getElementById('navbar');
+if (navbar) {
+  window.addEventListener('scroll', function() {
+    navbar.classList.toggle('scrolled', window.scrollY > 60);
+  }, { passive: true });
+}
+
+// ── SCROLL REVEAL ──
+function revealAll() {
+  document.querySelectorAll('.reveal').forEach(function(el) { el.classList.add('visible'); });
+}
+function revealInView() {
+  var vh = window.innerHeight || 800;
+  document.querySelectorAll('.reveal:not(.visible)').forEach(function(el) {
+    if (el.getBoundingClientRect().top < vh + 100) el.classList.add('visible');
+  });
+}
+if (('ontouchstart' in window) || navigator.maxTouchPoints > 0 || window.innerWidth <= 900) {
+  revealAll();
+} else {
+  revealInView();
+  if ('IntersectionObserver' in window) {
+    var io = new IntersectionObserver(function(entries) {
+      entries.forEach(function(e) {
+        if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); }
+      });
+    }, { threshold: 0, rootMargin: '0px 0px -20px 0px' });
+    document.querySelectorAll('.reveal').forEach(function(el) { io.observe(el); });
+  }
+  var rTick = false;
+  window.addEventListener('scroll', function() {
+    if (!rTick) { requestAnimationFrame(function() { revealInView(); rTick = false; }); rTick = true; }
+  }, { passive: true });
+  setTimeout(function() {
+    if (document.querySelectorAll('.reveal:not(.visible)').length > 3) revealAll();
+  }, 1000);
+  window.addEventListener('load', revealInView);
+}
+
+// ── DESKTOP CURSOR (non-touch only) ──
+if (!('ontouchstart' in window) && navigator.maxTouchPoints === 0) {
+  document.body.classList.add('has-cursor');
+  var dot = document.getElementById('cursor-dot');
+  var ring = document.getElementById('cursor-ring');
+  if (dot) dot.style.display = 'block';
+  if (ring) ring.style.display = 'block';
+  var mx = 0, my = 0, rx = 0, ry = 0;
+  document.addEventListener('mousemove', function(e) {
+    mx = e.clientX; my = e.clientY;
+    if (dot) { dot.style.left = mx + 'px'; dot.style.top = my + 'px'; }
+  });
+  (function animRing() {
+    rx += (mx - rx) * 0.12; ry += (my - ry) * 0.12;
+    if (ring) { ring.style.left = rx + 'px'; ring.style.top = ry + 'px'; }
+    requestAnimationFrame(animRing);
+  })();
+  document.querySelectorAll('a, button, .dining-card, .overview-card, .day-card, .tip-card').forEach(function(el) {
+    el.addEventListener('mouseenter', function() {
+      if (ring) { ring.style.transform = 'scale(1.8)'; ring.style.borderColor = 'rgba(201,160,74,1)'; }
+    });
+    el.addEventListener('mouseleave', function() {
+      if (ring) { ring.style.transform = 'scale(1)'; ring.style.borderColor = 'rgba(201,160,74,0.6)'; }
+    });
+  });
+}
+</script>
+
+<!-- LEAFLET MAPS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js" async></script>
+<script>
+(function() {
+  // Poll for Leaflet to load (async script), then init everything
+  function waitForLeaflet(cb, attempts) {
+    if (typeof L !== 'undefined') { cb(); return; }
+    if (attempts > 50) return; // give up after ~5s
+    setTimeout(function() { waitForLeaflet(cb, (attempts||0) + 1); }, 100);
+  }
+
+  waitForLeaflet(function() {
+    var tileUrl = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+    var tileAttr = '&copy; OpenStreetMap &copy; CARTO';
+
+    function makeIcon(color, emoji) {
+      return L.divIcon({
+        className: '',
+        html: '<div style="background:' + color + ';width:32px;height:32px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:2px solid rgba(255,255,255,0.3);box-shadow:0 2px 8px rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;"><span style="transform:rotate(45deg);font-size:14px;line-height:32px;display:block;text-align:center;">' + emoji + '</span></div>',
+        iconSize: [32, 32],
+        iconAnchor: [16, 32],
+        popupAnchor: [0, -34]
+      });
+    }
+
+    var sightIcon  = makeIcon('#6CA8E8', '🏛');
+    var foodIcon   = makeIcon('#C9A04A', '🍽');
+    var specialIcon = makeIcon('#8CC88C', '🌿');
+
+    var maps = {}; window.__maps = maps;
+
+    function initMap(id, lat, lng, zoom, markers) {
+      if (maps[id]) return;
+      var el = document.getElementById(id);
+      if (!el) return;
+      try {
+        var m = L.map(el, { zoomControl: true, scrollWheelZoom: false, tap: false, dragging: true }).setView([lat, lng], zoom);
+        L.tileLayer(tileUrl, { attribution: tileAttr, maxZoom: 19, subdomains: 'abcd' }).addTo(m);
+        markers.forEach(function(mk) {
+          L.marker([mk[0], mk[1]], { icon: mk[2] }).addTo(m).bindPopup('<b>' + mk[3] + '</b>');
+        });
+        maps[id] = m;
+        [100, 300, 800, 1500].forEach(function(d) {
+          setTimeout(function() { if (maps[id]) maps[id].invalidateSize(); }, d);
+        });
+      } catch(e) { /* Leaflet init failed */ }
+    }
+
+    var BCN_MARKERS = [
+      [41.4036, 2.1744, sightIcon, 'Sagrada Família'], [41.4145, 2.1527, sightIcon, 'Park Güell'],
+      [41.3917, 2.1649, sightIcon, 'Casa Batlló'], [41.3833, 2.1833, sightIcon, 'Gothic Quarter'],
+      [41.3809, 2.1897, sightIcon, 'Barceloneta Beach'], [41.3953, 2.1600, sightIcon, 'La Pedrera'],
+      [41.3851, 2.1734, foodIcon, 'La Boqueria'], [41.3921, 2.1606, foodIcon, 'Brunch & Cake'],
+      [41.3990, 2.1640, foodIcon, 'Origo Bakery'], [41.3910, 2.1658, foodIcon, 'Ciutat Comtal'],
+      [41.3955, 2.1720, foodIcon, 'Mediamanga'], [41.3880, 2.1690, foodIcon, 'Sucursal Aceitera'],
+      [41.4051, 2.1554, foodIcon, 'Fonda Pepa']
+    ];
+    var LLORET_MARKERS = [
+      [41.6929, 2.8418, specialIcon, 'Jardins de Santa Clotilde — sunset 9:20PM'],
+      [41.6996, 2.8378, sightIcon, 'Lloret Beach'], [41.7022, 2.8520, sightIcon, 'Castle of Sant Joan'],
+      [41.6985, 2.8410, sightIcon, 'Old Town']
+    ];
+    var MAD_MARKERS = [
+      [40.4138, -3.6922, sightIcon, 'Museo del Prado'], [40.4180, -3.7143, sightIcon, 'Royal Palace'],
+      [40.4153, -3.6844, sightIcon, 'El Retiro Park'], [40.4154, -3.7074, sightIcon, 'Plaza Mayor'],
+      [40.4167, -3.7033, sightIcon, 'Puerta del Sol'], [40.4130, -3.7079, sightIcon, 'Reina Sofía Museum'],
+      [40.4236, -3.6989, sightIcon, 'Thyssen Museum'], [40.4151, -3.7071, foodIcon, 'Chocolatería San Ginés'],
+      [40.4195, -3.7005, foodIcon, 'The Fix'], [40.4126, -3.6985, foodIcon, 'Vinoteca Moratin'],
+      [40.4220, -3.7020, foodIcon, 'Áston Gastroplace'], [40.4175, -3.7035, foodIcon, 'Algarabía'],
+      [40.4205, -3.6997, foodIcon, 'Eccolo Gelato'], [40.4160, -3.7010, foodIcon, 'Restaurante Clos']
+    ];
+    var SEG_MARKERS = [
+      [40.9480, -4.1183, sightIcon, 'Roman Aqueduct'], [40.9520, -4.1308, sightIcon, 'Alcázar de Segovia'],
+      [40.9494, -4.1183, sightIcon, 'Segovia Cathedral'], [40.9430, -4.1120, foodIcon, 'Asador Maribel']
+    ];
+
+    // Register lazy-init for inline onclick handlers
+    window.__initMapForTab = function(panelId) {
+      if (panelId === 'lloret-map')   initMap('leaflet-lloret',   41.6960, 2.8420, 14, LLORET_MARKERS);
+      if (panelId === 'madrid-map')   initMap('leaflet-madrid',   40.4168, -3.7038, 13, MAD_MARKERS);
+      if (panelId === 'segovia-map')  initMap('leaflet-segovia',  40.9481, -4.1179, 14, SEG_MARKERS);
+      var leafletIds = {'barcelona-map':'leaflet-barcelona','lloret-map':'leaflet-lloret','madrid-map':'leaflet-madrid','segovia-map':'leaflet-segovia'};
+      var activeMap = maps[leafletIds[panelId]];
+      if (activeMap) {
+        [100, 300, 600].forEach(function(d) {
+          setTimeout(function() { activeMap.invalidateSize(); }, d);
+        });
+      }
+    };
+
+    // Init Barcelona immediately
+    initMap('leaflet-barcelona', 41.3925, 2.1585, 13, BCN_MARKERS);
+  }, 0);
+})();
+</script>
+
+</body>
+</html>
